@@ -1,0 +1,168 @@
+/* Global styles */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+ 
+ 
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+ 
+  
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid white;
+}
+
+thead {
+  background-color: #2196f3;
+  color: white;
+}
+
+th {
+  font-weight: bold;
+}
+
+/* Ensure the table fits on smaller screens */
+.table-container {
+  overflow-x: auto;
+  max-width: 100%;
+  height: 100%;
+  
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .p-3 {
+    padding: 8px;
+  }
+
+  .min-h-screen {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-2xl {
+    font-size: 18px;
+  }
+
+  table {
+    width: 100%;
+    font-size: 10px;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+
+  .p-4 {
+    padding: 12px;
+  }
+
+  .max-w-95 {
+    max-width: 95%;
+  }
+
+  /* Adjust loading spinner size for smaller screens */
+  .animate-spin {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bg-gray-100 {
+    padding: 10px;
+  }
+
+  .table-container {
+    max-width: 100%;
+    overflow-x: scroll;
+  }
+}
+
+/* Spinner styles */
+.animate-spin {
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error message styles */
+.bg-red-100 {
+  background-color: #f8d7da;
+}
+
+.text-red-700 {
+  color: #721c24;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-8 {
+  margin-top: 2rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+/* Table Responsive Adjustments */
+@media (max-width: 640px) {
+  th, td {
+    padding: 8px;
+  }
+
+  td {
+    font-size: 12px;
+  }
+
+  .bg-blue-600 {
+    background-color: #1e3a8a;
+  }
+
+  .whitespace-nowrap {
+    white-space: normal;
+  }
+
+  .max-w-95 {
+    max-width: 95%;
+  }
+}

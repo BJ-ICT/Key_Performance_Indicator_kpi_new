@@ -1,0 +1,211 @@
+/* Container for the entire component */
+.multi-platform-tables-container {
+  background-size: cover;
+  background-position: center;
+  height: auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 40px;
+  margin: 70px 0; /* Adds a consistent margin around */
+  overflow-y: auto; /* Allows vertical scrolling */
+  overflow-x: auto; /* Allows horizontal scrolling */
+  position: relative;
+  
+  
+}
+
+
+
+/* Title for the entire component */
+.multi-platform-title {
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Wrapper for the hardcoded tables */
+.multi-platform-tables-wrapper {
+  display: flex;
+  justify-content: flex-start; /* Align items to the left */
+  align-items: flex-start;
+  margin: 200px 0 30px; /* Add top margin to move the tables down */
+  width: 100%;
+  position: relative;
+  
+}
+
+/* First Table container */
+.multi-platform-first-table-container {
+  width: 700px; /* Fixed width for the first table */
+  margin-left: -790px; /* Move the table to the left */
+  margin-top: 80px; /* Move the table down */
+  position: relative; /* Ensure positioning adjustments apply */
+}
+
+/* Second Table container */
+.multi-platform-second-table-container {
+  width: 600px; /* Fixed width for the second table */
+  margin-left: 2030px; /* Pushes the table to the right */
+  position: relative;
+  top: -213.6px; /* Moves the second table upward */
+}
+
+/* General table styling */
+.multi-platform-data-table {
+  background-color: #90ceee; 
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  border: none;
+  border-style: none;  
+ 
+  
+}
+
+/* Header styling */
+.multi-platform-data-table th {
+  background-color: #4a90e2; /* Blue background for headers */
+  color: white;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Body cell styling */
+.multi-platform-data-table td {
+  background-color: #cad6dd; /* Light gray background */
+  color: #191e1e;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Specific styling for the first hardcoded table */
+.multi-platform-current-month-table {
+  background-color: #90ceee; /* Light blue background */
+  width: 210%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  border: none;
+}
+
+.multi-platform-current-month-table th {
+  background-color: #4a90e2; /* Blue background for headers */
+  color: white;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+.multi-platform-current-month-table td {
+  background-color: #cad6dd; /* Light gray background */
+  color: #191e1e;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Table section (for platform tables) */
+.multi-platform-table-section {
+  margin-bottom: 50px;
+  width: 90%;
+  background-color: #74aff3;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: none;
+  background-color: transparent; /* Remove background color */
+  margin-left: -60px;
+}
+
+/* Table subtitle */
+.multi-platform-table-subtitle {
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 10px;
+  margin-top: -70px;
+}
+
+/* Spinner for loading */
+.multi-platform-spinner {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: multi-platform-spin 2s linear infinite;
+  margin: 50px auto; /* Center the spinner */
+}
+
+@keyframes multi-platform-spin {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Full viewport height */
+  background-color: #f5f5f5; /* Light background */
+}
+
+.loading-container h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Progress Bar */
+.progress-bar {
+  width: 20%;
+  height: 20px;
+  background-color: #e0e0df;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0;
+  background-color: green;
+  border-radius: 10px;
+  animation: loading 2s infinite;
+}
+
+/* Animation for Progress Bar */
+@keyframes loading {
+  0% {
+      width: 0%;
+  }
+  50% {
+      width: 75%;
+  }
+  100% {
+      width: 0%;
+  }
+}
+
+/* Error Container */
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.error-message {
+  color: red;
+  font-size: 1.2rem;
+  background-color: #ffe6e6;
+  padding: 20px;
+  border-radius: 5px;
+}

@@ -1,0 +1,79 @@
+<VirtualHost *:443>
+
+	SSLEngine on
+	SSLCertificateFile "C:/xampp/apache/conf/ssl.crt/certificate.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/conf/ssl.key/private-key.key"
+    SSLCertificateChainFile "C:/xampp/apache/conf/ssl.crt/ca-bundle.crt"
+	
+
+
+     # Serve frontend build
+    DocumentRoot "D:/KPI/KPI/fe/build"
+    <Directory "D:/KPI/KPI/fe/build">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+	
+	
+
+    # Reverse proxy for backend API requests
+    ProxyPreserveHost On
+    SSLProxyEngine on
+	
+	
+    ProxyPass /auth https://localhost:8070/auth
+    ProxyPassReverse /auth https://localhost:8070/auth
+	
+	ProxyPass /form6 https://localhost:8070/form6
+    ProxyPassReverse /form6 https://localhost:8070/form6
+	
+	ProxyPass /form7 https://localhost:8070/form7
+    ProxyPassReverse /form7 https://localhost:8070/form7
+	
+	ProxyPass /form8 https://localhost:8070/form8
+    ProxyPassReverse /form8 https://localhost:8070/form8
+	
+	ProxyPass /form4 https://localhost:8070/form4
+    ProxyPassReverse /form4 https://localhost:8070/form4
+	
+	ProxyPass /form9 https://localhost:8070/form9
+    ProxyPassReverse /form9 https://localhost:8070/form9
+	
+	ProxyPass /form2 https://localhost:8070/form2
+    ProxyPassReverse /form2 https://localhost:8070/form2
+	
+	ProxyPass /form10 https://localhost:8070/form10
+    ProxyPassReverse /form10 https://localhost:8070/form10
+	
+	ProxyPass /data-fetch1 https://localhost:8070/data-fetch1
+    ProxyPassReverse /data-fetch1 https://localhost:8070/data-fetch1
+	
+	ProxyPass /data-fetch2 https://localhost:8070/data-fetch2
+    ProxyPassReverse /data-fetch2 https://localhost:8070/data-fetch2
+	
+	ProxyPass /public https://localhost:8070/public
+    ProxyPassReverse /public https://localhost:8070/public
+	
+	ProxyPass /api https://localhost:8070/api
+    ProxyPassReverse /api https://localhost:8070/api
+	
+	ProxyPass / http://localhost:3000/
+    ProxyPassReverse / http://localhost:3000/
+	
+	
+    ErrorLog "C:/xampp/apache/logs/error.log"
+    CustomLog "C:/xampp/apache/logs/access.log" common
+</VirtualHost>
+
+
+
+
+
+
+
+
+
+
+
+

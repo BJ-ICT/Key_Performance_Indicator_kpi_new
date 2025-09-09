@@ -1,0 +1,162 @@
+/* src/components/FormWithDropdowns.css */
+.page6-container .page-background {
+    /* Accessing image from public folder */
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+  }
+  
+.page6-container form {
+    max-width: 1000px; /* Increase width for horizontal alignment */
+    margin: auto;
+    margin-top: 120px;
+    margin-bottom: 70px;
+    padding: 30px; /* Adjust padding */
+    background-color: #74aff3; /* #3fbbc0 with 80% opacity */
+    border-radius: 25px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex; /* Use Flexbox for horizontal alignment */
+    flex-wrap: wrap; /* Allow wrapping if necessary */
+    gap: 20px; /* Add spacing between items */
+  }
+  
+  .page6-container form > div {
+    flex: 1; /* Allow each div to grow equally */
+    min-width: 200px; /* Ensure minimum width for dropdowns */
+  }
+  
+  .page6-container label {
+    display: block;
+    margin-bottom: 5px;
+    color: white; /* Text color for better contrast */
+    font-weight: 400;
+  }
+  
+  .page6-container select {
+    width: 100%; /* Ensure select elements take full width of their container */
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 20px;
+    color: rgb(8, 5, 5); /* Text color */
+    background-color: #E8E9EB; /* Background color */
+    border: 2px solid #191e1e; /* Border color */
+    outline: none; /* Remove default outline */
+  }
+  
+  .page6-container button {
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 10px;
+  }
+  
+  .page6-container button:hover {
+    background-color: #075093;
+  }
+  
+  .page6-container .data-table {
+    background-color: #90ceee; /* Uniform gray background color for the entire table */
+    width: 90%;
+    border-collapse: collapse; /* Removes the space between borders */
+    margin-bottom: 20px;
+    margin-left: 80px;
+    border: 5px;
+  }
+  
+  .page6-container .data-table th, .data-table td {
+    padding: 10px;
+    text-align: left;
+  }
+  
+  .page6-container .data-table th {
+    background-color: #4a90e2;
+    text-align: center; /* Slightly darker gray for header cells */
+  }
+  
+  .page6-container .data-table td {
+    background-color: #cad6dd; /* Ensure table cells have the same background color */
+    border-bottom: 1px solid white; /* Optional: adds a border between rows */
+    color: #191e1e;
+  }
+  
+  
+  /* Add this to your FormWithDropdowns.css file */
+  
+  .page6-container .submit-button {
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 10px 0;
+    margin-bottom: 150px;
+    float: right; /* Float button to the right */
+    margin-right: 90px;
+    width: 90px;
+    border-radius: 5px;
+  }
+  
+  
+  .page6-container .submit-button:hover {
+    background-color: #075093; /* Change color on hover */
+  }
+  
+  .page6-container .h1name{
+    color: rgb(33, 33, 33);
+  }
+  
+  .page6-container .reportbtn1{
+    margin-left: 80px;
+  }
+  
+  .page6-container .savebtn1{
+    margin-left: auto;
+     margin-bottom: 90px;
+  }
+  
+  
+  .page6-container .data-table th.newth{
+    background-color: #4a90e2;
+  }
+  
+    /* General button styles */
+.page6-container .table-button {
+  padding: 3px 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: #007bff; /* Primary blue */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-right: 5px;
+  
+}
+
+.page6-container .table-button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+.page6-container .table-button:active {
+  transform: scale(0.95); /* Slight press effect */
+}
+
+/* Secondary button styles (optional) */
+.page6-container .table-button.Cancel {
+  background-color: #dc3545; /* Red for cancel */
+}
+
+.page6-container .table-button.cancel:hover {
+  background-color: #a71d2a; /* Darker red on hover */
+}
+  

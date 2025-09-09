@@ -1,0 +1,75 @@
+/* src/components/DataTable.css */
+
+.home-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-left: 20px;
+    margin-right: 50px;
+    margin-bottom: 50px;
+  }
+  
+  .home-container th, td {
+    border: 1px solid #ededed;
+    padding: 8px;
+  }
+  
+
+  
+  .home-container th {
+    background-color: #4a90e2; /* New header color */
+    color: #fff; /* Optional: change text color to white for better contrast */
+  }
+  
+  .home-container tr:nth-child(even) {
+    background-color: #d3d3d3; /* Gray color for even rows */
+    color: #000000;
+  }
+  
+  .home-container tr:nth-child(odd) {
+    background-color: #d3d3d3; /* Optional: alternate color for odd rows */
+    color: #000000;
+    
+  }
+  
+  .home-container .popup-message {
+    background-color: #4caf50; /* Green background */
+    color: white; /* White text */
+    padding: 15px;
+    margin-top: 1px;
+    margin-bottom: 100px;
+    border-radius: 5px;
+    text-align: center;
+  }
+
+
+  .home-container .reportbtn {
+     /* Moves the button to the right */
+    background-color: #4a90e2; /* Optional: same color as save button */
+    color: white;
+    padding: 10px 20px;
+    margin-top: 1px;
+    margin-left: 20px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .home-container .reportbtn:hover {
+    background-color: #084283; /* Darker blue on hover */
+  }
+  
+/* SaveButtonStyles.css */
+/* SaveButtonStyles.css */
+.home-container .savebtn {
+  background-color: #4a90e2; /* Green background */
+  color: white;
+  margin-bottom: 90px;
+}
+
+.home-container .savebtn:hover {
+  background-color: #084283; /* Darker green on hover */
+}
+
+
+.home-container .reportbtn:hover {
+  background-color: #084283; /* Darker blue on hover */
+}

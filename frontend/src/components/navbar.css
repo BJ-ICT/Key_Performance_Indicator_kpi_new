@@ -1,0 +1,220 @@
+.nav-container {
+  
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #0055ab;
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 80px;
+}
+
+.nav-left, .nav-center, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  
+  
+}
+
+
+.nav-logo {
+  height: 80px;
+  width: auto;
+  margin-bottom: 8px;
+}
+
+
+/* .nav-center {
+  flex-grow: 1;
+  justify-content: center;
+  
+} */
+
+.topnav a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  padding: 10px;
+}
+
+.dropbtn {
+  font-size: 18px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 10px 12px; /* Reduced padding to match links */
+  background-color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.arrow-down {
+  margin-left: 5px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Show dropdown when hovering over the dropdown container */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+
+
+
+
+.user-name {
+  color: white;
+  font-size: 16px;
+}
+
+.logout-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+}
+
+.toggle-btn {
+  display: none;
+  font-size: 24px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Dropdown Icon Styling */
+/* Dropdown Icon Styling */
+.dropdown-icon {
+  margin-left: 8px;
+  font-size: 16px;
+  color: white;
+  transition: none; /* Remove rotation animation */
+}
+
+/* Remove this class (if it exists) */
+.dropdown-icon.rotate {
+  transform: none; /* Ensure no rotation */
+}
+
+/* Dropdown Content Styling */
+.dropdown-content {
+  display: flex;
+  flex-direction: column;
+  width: auto; /* Set size to adjust automatically */
+  text-align: left; /* Align text to the left */
+  background-color: white; /* Optional: Add a background color for better visibility */
+  padding: 10px; /* Optional: Add padding for spacing */
+  border: 1px solid #ccc; /* Optional: Add a border for better visibility */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for a modern look */
+}
+
+.dropdown-content a {
+  text-decoration: none; /* Remove underline from links */
+  color: #000; /* Set text color */
+  padding: 8px 12px; /* Add padding to links */
+}
+
+.dropdown-content a:hover {
+  background-color: #f0f0f0; /* Add hover effect */
+  color: #000; /* Ensure the text remains visible */
+}
+
+
+
+
+.brand-text {
+  font-size: 21px;
+  margin-left: 20px;
+}
+
+.logout-btn {
+  margin-left: 10px;
+}
+
+
+@media screen and (max-width: 768px) {
+  .topnav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-center {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-left: 190px; /* Move 90px to the right */
+  }
+
+  .nav-center.responsive-menu {
+    display: flex;
+  }
+
+  .toggle-btn {
+    display: block;
+  }
+}
+
+
+/* Dropdown Content Styling */
+.dropdown {
+  position: relative; /* Ensure the dropdown button is the positioning context */
+}
+
+/* Dropdown Content Styling */
+.dropdown-content {
+  display: flex;
+  flex-direction: column;
+  width: 200px; /* Set a fixed width */
+  text-align: left;
+  background-color: white;
+  padding: 5px; /* Adjust spacing inside the dropdown */
+  border: 1px solid #ccc; /* Add a border for better visibility */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow */
+}
+
+/* Dropdown Items Styling */
+.dropdown-content a {
+  color: #333; /* Text color */
+  padding: 10px 15px; /* Spacing around text */
+  text-decoration: none; /* Remove underline */
+  display: block;
+  font-size: 15px;
+  width: 100%; /* Ensure each item spans the full width */
+}
+
+/* Hover Effect */
+.dropdown-content a:hover {
+  background-color: #f0f0f0; /* Light background on hover */
+  color: #000; /* Text color on hover */
+}
+
+
+
+
+/* Add some adjustments for smaller screens if needed */
+@media screen and (max-width: 768px) {
+  .dropdown-content {
+    min-width: 100%; /* Adjust the dropdown to be wider on smaller screens */
+  }
+}
+

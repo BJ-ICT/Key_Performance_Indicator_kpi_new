@@ -1,0 +1,133 @@
+/* General container styling */
+.admin1 .form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    margin-top: 80px;
+    margin-bottom: 90px;
+
+  }
+
+
+
+  
+  /* Form title */
+  .admin1 .form-title {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  /* Form styling */
+  .admin1 .form {
+    margin-bottom: 30px;
+    
+  }
+  
+  .admin1 .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .admin1 .form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+  }
+  
+  .admin1 .form-input {
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    
+  }
+  
+  .admin1 .form-button {
+    width: 20%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  .admin1 .form-button:hover {
+    background: #0056b3;
+  }
+  
+  /* Records table */
+  .admin1 .records-title {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .admin1 .records-table {
+    width: 80%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    color: black;
+    margin: auto; 
+    margin-bottom: 90px;
+  }
+  
+  .admin1 .table-header {
+    background: #007bff;
+    color: rgb(11, 7, 7);
+    text-align: left;
+    padding: 10px;
+  }
+  
+  .admin1 .table-row:nth-child(even) {
+    background: #f9f9f9;
+  }
+  
+  .admin1 .table-cell {
+    padding: 10px;
+    border-bottom: 1px solid #dee6e1;
+  }
+  
+  .admin1 .actions-cell {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .admin1 .action-button {
+    padding: 5px 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .admin1 .edit-button {
+    background: #28a745;
+    color: white;
+  }
+  
+  .admin1 .edit-button:hover {
+    background: #218838;
+  }
+  
+  .admin1 .delete-button {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .admin1 .delete-button:hover {
+    background: #c82333;
+  }
+  

@@ -1,0 +1,231 @@
+body {
+  background-color: #f8f9fa;
+}
+
+#root {
+  margin: 0 auto;
+  /* padding: 2.1rem; */
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 1em;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.card-text {
+  font-weight: 400;
+}
+
+
+.cardOffCanvas {
+  padding: 0;
+  text-align: left;
+}
+
+.cardOffCanvas .card-header {
+  background-color: #052c65;
+  color: #ffffff;
+}
+
+.cardOffCanvas .card-title {
+  color: rgb(12, 185, 12);
+}
+
+.offcanvas {
+  background-color: #f8f9fa;
+}
+
+.card-text {
+  margin-bottom: 5px;
+}
+
+.card-hover {
+  transition: transform 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: scale(1.03);
+  /* background-color: #0d6efd;
+  color: white; */
+}
+
+.full-width {
+  width: 100%;
+}
+
+.footer {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 992px) {
+  .navbar {
+    height: 80px;
+  }
+  .custom-card-height {
+    height: 120px;
+  }
+  .webCards{
+    margin-left: 2rem;
+    margin-right: 2rem;
+  }
+
+
+}
+
+@media (max-width: 576px) {
+  .navbar {
+    height: 80px;
+  }
+  .navbar-nav .btn-primary, .navbar-nav .btn-secondary {
+    margin-bottom: 10px;
+  }
+  form .alert {
+    margin-top: 10px;
+  }
+  
+}
+
+.animate-bg1 {
+  animation: animate1 10s ease infinite;
+}
+
+@keyframes animate1 {
+  0% {
+    background-color: navy;
+  }
+  30% {
+    background-color: #0d6efd;
+  }
+  60% {
+    background-color: green;
+  }
+  100% {
+    background-color: navy;
+  }
+}
+
+/* .animate-bg2 {
+  animation: animate2 5s ease infinite;
+}
+
+@keyframes animate2 {
+  0% {
+    background-color: rgb(255, 255, 255);
+  }
+  50% {
+    background-color: #e3e3e3;
+  }
+  100% {
+    background-color: rgb(255, 255, 255);
+  }
+} */
+
+
+.navbar-nav .btn-primary {
+  border: 2px solid #0d6efd;
+  color: #0d6efd;
+  background-color: #ffffff;
+  font-weight: 500;
+}
+
+.navbar-nav .btn-primary:hover {
+  border-color: #0d6efd;
+  color: #ffffff;
+  background-color: #0d6efd;
+}
+
+.navbar-nav .btn-primary svg {
+  fill: #0d6efd;
+}
+
+.navbar-nav .btn-primary:hover svg {
+  fill: #ffffff;
+}
+
+.navbar-nav .btn-secondary {
+  border: 2px solid rgb(0, 166, 0);
+  color: rgb(0, 166, 0);
+  background-color: #ffffff;
+  font-weight: 500;
+}
+
+.navbar-nav .btn-secondary:hover {
+  border-color: rgb(0, 166, 0);
+  color: #ffffff;
+  background-color: rgb(0, 166, 0);
+}
+
+.navbar
+        {
+            border-bottom:1px solid #ededed;
+        }
+
+label {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+input {
+  height: 3rem;
+}
+
+textarea{
+  resize: none;
+  height: 12rem;
+}
+
+.form-group{
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.offCanvas {
+  max-width: 900px; /* Adjust the width as per your requirement */
+}
+
+.carousel-indicators button {
+  background-color: rgb(0, 76, 101);
+  border-color: rgb(0, 111, 148);
+}
+
+form .alert {
+  font-size: 1rem;
+}
+
+.initialSwipers {
+  margin: 0;
+  padding: 0;
+}
+
+.bg {
+  background-color: #f8f9fa;
+}

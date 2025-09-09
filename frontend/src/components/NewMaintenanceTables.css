@@ -1,0 +1,185 @@
+/* Overall container to allow scrolling */
+.tables-container {
+    background-size: cover;
+    background-position: center;
+    height: auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 70px 0 0; /* Add a top margin to move everything down */
+    padding: 20px;
+    overflow-y: auto; /* Allows vertical scrolling */
+    overflow-x: scroll;
+    padding-left: 0px;
+    padding-right: 10px;
+    margin-bottom: 70px;
+    
+  }
+  
+  /* Title for the entire section */
+  .table-title {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 70px;
+    margin-top: 10px;
+  }
+  
+  /* Wrapper for each table section */
+  .table-section {
+    margin-bottom: 50px;
+    width: 90%;
+    background-color: transparent; /* Removes the background color */
+    padding: 0; /* Removes padding */
+    border-radius: 0; /* Removes rounded corners */
+    box-shadow: none; /* Removes the shadow */
+}
+
+  
+  /* Title for each individual table */
+  .table-subtitle {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  /* Main table styling */
+  .data-table {
+    background-color: #90ceee; /* Light blue background for the entire table */
+    width: 100%;
+    border-collapse: collapse; /* Removes the space between borders */
+    margin-bottom: 20px;
+    border: none; /* Removes the border */
+  }
+  
+  /* Header and data cells styling */
+  .data-table th,
+  .data-table td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0; /* Adds a light border for better readability */
+  }
+  
+  /* Header cells styling */
+  .data-table th {
+    background-color: #4a90e2; /* Blue background for headers */
+    color: white;
+    text-align: center;
+  }
+  
+  /* Body cells styling */
+  .data-table td {
+    background-color: #cad6dd; /* Light gray background for table cells */
+    color: #191e1e; /* Dark text for better readability */
+  }
+  
+  /* Center the spinner while loading */
+  .spinner {
+    border: 16px solid #f3f3f3; /* Light grey */
+    border-top: 16px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+    margin: 50px auto; /* Center the spinner */
+  }
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* .loader {
+    width: 48px;
+    height: 48px;
+    position: relative;
+  }
+  .loader::before , .loader::after{
+    content: '';
+    position: absolute;
+    left: 2200%;
+    top: 900%;
+    transform: translate(-50% , -50%);
+    width: 48em;
+    height: 48em;
+    background-image:
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0),
+      radial-gradient(circle 10px, #3498db 100%, transparent 0);
+    background-position: 0em -18em, 0em 18em, 18em 0em, -18em 0em,
+                         13em -13em, -13em -13em, 13em 13em, -13em 13em;
+      background-repeat: no-repeat;
+    font-size: 0.5px;
+    border-radius: 50%;
+    animation: blast 1s ease-in infinite;
+  }
+  .loader::after {
+    font-size: 1px;
+    background: #3498db;
+    animation: bounce 1s ease-in infinite;
+  }
+  
+  @keyframes bounce {
+    0% , 100%{ font-size: 0.75px }
+    50% { font-size: 1.5px }
+  }
+  @keyframes blast {
+    0% , 40% {
+      font-size: 0.5px;
+    }
+    70% {
+      opacity: 1;
+      font-size: 4px;
+    }
+     100% {
+       font-size: 6px;
+      opacity: 0;
+    }
+  } */
+
+  .loader {
+    width: 64px;
+    height: 64px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-image:
+      linear-gradient(#0056a2 16px, transparent 0),
+      linear-gradient(green 16px, transparent 0),
+      linear-gradient(green 16px, transparent 0),
+      linear-gradient(#0056a2 16px, transparent 0);
+    background-repeat: no-repeat;
+    background-size: 16px 16px;
+    background-position: left top, left bottom, right top, right bottom;
+    animation: rotate 1s linear infinite;
+  }
+  
+  @keyframes rotate {
+    0% {
+      width: 64px;
+      height: 64px;
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    50% {
+      width: 30px;
+      height: 30px;
+      transform: translate(-50%, -50%) rotate(180deg);
+    }
+    100% {
+      width: 64px;
+      height: 64px;
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+  

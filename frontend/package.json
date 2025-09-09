@@ -1,0 +1,65 @@
+{
+  "name": "kpi",
+  "version": "0.1.0",
+  "private": true,
+  "proxy": "https://localhost:8070",
+  "dependencies": {
+    "@azure/msal-browser": "^4.8.0",
+    "@azure/msal-react": "^3.0.7",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.7",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.7",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
+    "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.471.1",
+    "papaparse": "^5.4.1",
+    "react": "^18.3.1",
+    "react-bootstrap": "^2.10.7",
+    "react-chartjs-2": "^5.3.0",
+    "react-circular-progressbar": "^2.1.0",
+    "react-d3-speedometer": "^2.2.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
+    "react-loader-spinner": "^6.1.6",
+    "react-router-dom": "^6.26.1",
+    "react-scripts": "5.0.1",
+    "react-toastify": "^10.0.5",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5",
+    "xlsx-style": "^0.8.13",
+    "xml2js": "^0.6.2",
+    "xmldom": "^0.6.0"
+  },
+  "scripts": {
+    "start": "set HTTP=true&&set SSL_CRT_FILE=../ssl/certificate.crt&&set SSL_KEY_FILE=../ssl/private-key.key&&react-scripts start",
+    "build": "set HTTPS=true&&set SSL_CRT_FILE=../ssl/certificate.crt&&set SSL_KEY_FILE=../ssl/private-key.key&&react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

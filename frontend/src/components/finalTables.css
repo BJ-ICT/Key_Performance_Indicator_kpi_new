@@ -1,0 +1,177 @@
+/* Container for the entire component */
+.final-tables-container {
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 50px 0 0;
+    padding: 20px;
+    width: 100%;
+}
+
+/* Title styles */
+.final-tables-title {
+    color: #333;
+    font-weight: bold;
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+/* Side-by-side layout container */
+.side-by-side-tables {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    gap: 0;
+}
+
+/* Table containers */
+.side-by-side-tables .final-table-container,
+.side-by-side-tables .kpi-table-container {
+    flex: 1;
+    min-width: fit-content;
+}
+
+/* Remove the padding top from KPI table */
+.side-by-side-tables .kpi-table-container {
+    padding-top: 171px;
+}
+
+/* General table styling */
+.final-maintenance-table,
+.final-distribution-table,
+.kpi-table {
+    background-color: #e3f2fd;
+    border-collapse: collapse;
+    border-radius: 1px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+/* Header styling */
+.final-maintenance-table th,
+.final-distribution-table th,
+.kpi-table th {
+    background-color: #2196f3;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #0f0f0f;
+    height: 40px;
+    line-height: 40px;
+    white-space: nowrap;
+}
+
+/* Body cell styling */
+.final-maintenance-table td,
+.final-distribution-table td,
+.kpi-table td {
+    background-color: #f8f9fa;
+    color: #333;
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    border: 1px solid #0f0f0f; 
+    height: 60px;
+    line-height: 40px;
+    white-space: nowrap;
+}
+
+/* Alternating row colors */
+.final-maintenance-table tbody tr:nth-child(odd),
+.final-distribution-table tbody tr:nth-child(odd),
+.kpi-table tbody tr:nth-child(odd) {
+    background-color: #f1f8ff;
+}
+
+.final-maintenance-table tbody tr:nth-child(even),
+.final-distribution-table tbody tr:nth-child(even),
+.kpi-table tbody tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+/* Hover effect */
+.final-maintenance-table tbody tr:hover,
+.final-distribution-table tbody tr:hover,
+.kpi-table tbody tr:hover {
+    background-color: #bbdefb;
+    cursor: pointer;
+}
+
+/* Column headers with colspan */
+.final-distribution-table th[colspan],
+.kpi-table th[colspan] {
+    text-align: center;
+    font-size: 12px;
+    padding: 8px;
+    background-color: #1976d2;
+    color: white;
+}
+
+/* Footer styling */
+.final-maintenance-table tfoot td,
+.final-distribution-table tfoot td {
+    background-color: #1976d2;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+}
+
+/* Ensure both tables are visible */
+.final-table-container,
+.kpi-table-container {
+    display: block;
+    visibility: visible;
+    position: relative;
+}
+
+/* Table cell consistent sizing */
+.kpi-table td, 
+.kpi-table th,
+.final-distribution-table td,
+.final-distribution-table th {
+    font-size: 12px;
+    padding: 8px;
+    white-space: nowrap;
+}
+
+/* Media query for mobile responsiveness */
+@media screen and (max-width: 768px) {
+    .side-by-side-tables {
+        flex-direction: column;
+    }
+    
+    .side-by-side-tables .final-table-container,
+    .side-by-side-tables .kpi-table-container {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .final-tables-container {
+        padding: 10px;
+    }
+}
+
+/* Loading spinner */
+.final-tables-spinner {
+    border: 12px solid #f3f3f3;
+    border-top: 12px solid #1976d2;
+    border-radius: 50%;
+    width: 0px;
+    height: 100px;
+    animation: final-tables-spin 1.5s linear infinite;
+    margin: 50px auto;
+}
+
+@keyframes final-tables-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
