@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import ProtectedComponent from "./ProtectedComponent ";
 import ExcelJS from "exceljs";
+
 // Columns for Platform Distribution & Achievements
 const columns = [
   "NW/WPC-1(CEN/HK/MD)",
@@ -1299,6 +1300,8 @@ export default function FinalTables() {
     return isNaN(numValue) ? "-" : `${numValue.toFixed(2)}%`;
   };
 
+
+
   const exportToExcel = () => {
     // Create a new workbook
     const workbook = new ExcelJS.Workbook();
@@ -1365,187 +1368,172 @@ export default function FinalTables() {
       ],
     ];
 
-    // ...existing code...
+    // Prepare dynamic rows to match static table row indices
+    const staticRowNumbers = kpiData
+      .filter((row) => ![4, 8, 9].includes(row.rowNumber || row.no))
+      .map((row) => row.rowNumber || row.no);
 
-// Prepare dynamic rows to match static table row indices
-const staticRowNumbers = kpiData
-  .filter((row) => ![4, 8, 9].includes(row.rowNumber || row.no))
-  .map((row) => row.rowNumber || row.no);
-
-// Build dynamicTableRows with correct alignment
-const dynamicTableRows = staticRowNumbers.map((rowNum, idx) => {
-  // Row 1 and 2: KPI rows
-  if (rowNum === 1 || rowNum === 2) {
-    const kpiItem = kpiRes[rowNum - 1];
-    if (!kpiItem) return [];
-    const threshold =  rowNum === 1 ? threshold1  : rowNum === 2 ? threshold2 : rowNum === 3 ? threshold3  : null;
-    const wpcVal = kpiItem.percentages["NW/WPC"] || "0.00";
-    const wg =
-      parseFloat(
-        kpiData.find((item) => item.no === (kpiItem.no || kpiItem.rowNumber))
-          ?.weightage
-      ) || 0;
-    return [
-      rowNum,
-      cleanPercentageValue(rAchieved(wpcVal, threshold)),
-      cleanPercentageValue(rAchievedW(wpcVal, threshold, wg)),
-      ...columns.flatMap((col) => [
-        cleanPercentageValue(
-          rAchieved(kpiItem.percentages[col] || "0.00", threshold)
-        ),
-        cleanPercentageValue(
-          rAchievedW(kpiItem.percentages[col] || "0.00", threshold, wg)
-        ),
-      ]),
-    ];
-  }
-  // Row 5: Final Data Row
-  if (rowNum === 5) {
-    return [
-      "5",
-      cleanPercentageValue(subs?.cenhkmd || "0"),
-      cleanPercentageValue(rFinalDataRowWithWeightage(subs?.cenhkmd || "0")),
-      ...columns.flatMap((col) => {
-        const key = columnToKeyMap[col];
-        const val = subs?.[key] || 0;
+    // Build dynamicTableRows with correct alignment
+    const dynamicTableRows = staticRowNumbers.map((rowNum, idx) => {
+      // Row 1 and 2: KPI rows
+      if (rowNum === 1 || rowNum === 2) {
+        const kpiItem = kpiRes[rowNum - 1];
+        if (!kpiItem) return [];
+        const threshold = rowNum === 1 ? threshold1 : rowNum === 2 ? threshold2 : rowNum === 3 ? threshold3 : null;
+        const wpcVal = kpiItem.percentages["NW/WPC"] || "0.00";
+        const wg =
+          parseFloat(
+            kpiData.find((item) => item.no === (kpiItem.no || kpiItem.rowNumber))
+              ?.weightage
+          ) || 0;
+        // Use columnsAchievedRef for Achieved KPI with Weightage
         return [
-          cleanPercentageValue(val),
-          cleanPercentageValue(rFinalDataRowWithWeightage(val)),
+          rowNum,
+          cleanPercentageValue(rAchieved(wpcVal, threshold)),
+          cleanPercentageValue(columnsAchievedRef.current[`row${rowNum}`][0]),
+          ...columns.flatMap((col, colIdx) => [
+            cleanPercentageValue(rAchieved(kpiItem.percentages[col] || "0.00", threshold)),
+            cleanPercentageValue(columnsAchievedRef.current[`row${rowNum}`][colIdx]),
+          ]),
         ];
-      }),
-    ];
-  }
-  // Row 6: Average Row
-  if (rowNum === 6) {
-    return [
-      "6",
-      cleanPercentageValue(averagePlaceholder?.["NW/WPC"] || "0"),
-      cleanPercentageValue(
-        rCurrentMonthWithWeightage(averagePlaceholder?.["NW/WPC"] || "0")
-      ),
-      ...columns.flatMap((col) => [
-        cleanPercentageValue(averagePlaceholder?.[col] || "0"),
-        cleanPercentageValue(
-          rCurrentMonthWithWeightage(averagePlaceholder?.[col] || "0")
-        ),
-      ]),
-    ];
-  }
-  // Row 7: ServFulOk Row
-  if (rowNum === 7) {
-    return [
-      "7",
-      cleanPercentageValue(servFulOkRow?.["cenhkmd"] || "0"),
-      cleanPercentageValue(
-        rServFulOkWithWeightage(servFulOkRow?.["cenhkmd"] || "0")
-      ),
-      ...columns.flatMap((col) => {
-        const key = columnToKeyMap[col];
-        const val = servFulOkRow?.[key] || 0;
+      }
+      // Row 5: Final Data Row
+      if (rowNum === 5) {
         return [
-          cleanPercentageValue(val),
-          cleanPercentageValue(rServFulOkWithWeightage(val)),
+          "5",
+          cleanPercentageValue(subs?.cenhkmd || "0"),
+          cleanPercentageValue(columnsAchievedRef.current.row5[0]),
+          ...columns.flatMap((col, colIdx) => {
+            const key = columnToKeyMap[col];
+            const val = subs?.[key] || 0;
+            return [
+              cleanPercentageValue(val),
+              cleanPercentageValue(columnsAchievedRef.current.row5[colIdx]),
+            ];
+          }),
         ];
+      }
+      // Row 6: Average Row
+      if (rowNum === 6) {
+        return [
+          "6",
+          cleanPercentageValue(averagePlaceholder?.["NW/WPC"] || "0"),
+          cleanPercentageValue(columnsAchievedRef.current.row6[0]),
+          ...columns.flatMap((col, colIdx) => [
+            cleanPercentageValue(averagePlaceholder?.[col] || "0"),
+            cleanPercentageValue(columnsAchievedRef.current.row6[colIdx]),
+          ]),
+        ];
+      }
+      // Row 7: ServFulOk Row
+      if (rowNum === 7) {
+        return [
+          "7",
+          cleanPercentageValue(servFulOkRow?.["cenhkmd"] || "0"),
+          cleanPercentageValue(columnsAchievedRef.current.row7[0]),
+          ...columns.flatMap((col, colIdx) => {
+            const key = columnToKeyMap[col];
+            const val = servFulOkRow?.[key] || 0;
+            return [
+              cleanPercentageValue(val),
+              cleanPercentageValue(columnsAchievedRef.current.row7[colIdx]),
+            ];
+          }),
+        ];
+      }
+      // Row 10: Current Month Row
+      if (rowNum === 10) {
+        return [
+          "10",
+          cleanPercentageValue(columnSums[columnSums.length - 1] || "0"),
+          cleanPercentageValue(columnsAchievedRef.current.row10[0]),
+          ...columns.flatMap((_, colIdx) => [
+            cleanPercentageValue(columnSums[colIdx] || "0"),
+            cleanPercentageValue(columnsAchievedRef.current.row10[colIdx]),
+          ]),
+        ];
+      }
+      // Otherwise, empty row
+      return [];
+    });
+
+    // Add Total Row (row 11)
+    dynamicTableRows.push([
+      "11",
+      "",
+      (() => {
+        const targetRows = [1, 2, 5, 6, 7, 10];
+        const sum = targetRows.reduce((total, rowNum) => {
+          const idx = staticRowNumbers.indexOf(rowNum);
+          const rowValue = dynamicTableRows[idx]?.[2] || "0";
+          const numericValue =
+            parseFloat(rowValue.toString().replace("%", "")) || 0;
+          return total + numericValue;
+        }, 0);
+        return cleanPercentageValue(sum);
+      })(),
+      ...columns.flatMap((_, colIndex) => {
+        const targetRows = [1, 2, 5, 6, 7, 10];
+        const withWeightageIndex = colIndex * 2 + 4;
+        const sum = targetRows.reduce((total, rowNum) => {
+          const idx = staticRowNumbers.indexOf(rowNum);
+          const rowValue =
+            dynamicTableRows[idx]?.[withWeightageIndex] || "0";
+          const numericValue =
+            parseFloat(rowValue.toString().replace("%", "")) || 0;
+          return total + numericValue;
+        }, 0);
+        return ["", cleanPercentageValue(sum)];
       }),
-    ];
-  }
-  // Row 10: Current Month Row
-  if (rowNum === 10) {
-    return [
-      "10",
-      cleanPercentageValue(columnSums[columnSums.length - 1] || "0"),
-      cleanPercentageValue(
-        rSumRowWithWeightage(columnSums[columnSums.length - 1] || "0")
-      ),
-      ...columns.flatMap((_, i) => [
-        cleanPercentageValue(columnSums[i] || "0"),
-        cleanPercentageValue(rSumRowWithWeightage(columnSums[i] || "0")),
-      ]),
-    ];
-  }
-  // Otherwise, empty row
-  return [];
-});
+    ]);
 
-// Add Total Row (row 11)
-dynamicTableRows.push([
-  "11",
-  "",
-  (() => {
-    const targetRows = [1, 2, 5, 6, 7, 10];
-    const sum = targetRows.reduce((total, rowNum) => {
-      const idx = staticRowNumbers.indexOf(rowNum);
-      const rowValue = dynamicTableRows[idx]?.[2] || "0";
-      const numericValue =
-        parseFloat(rowValue.toString().replace("%", "")) || 0;
-      return total + numericValue;
-    }, 0);
-    return cleanPercentageValue(sum);
-  })(),
-  ...columns.flatMap((_, colIndex) => {
-    const targetRows = [1, 2, 5, 6, 7, 10];
-    const withWeightageIndex = colIndex * 2 + 4;
-    const sum = targetRows.reduce((total, rowNum) => {
-      const idx = staticRowNumbers.indexOf(rowNum);
-      const rowValue =
-        dynamicTableRows[idx]?.[withWeightageIndex] || "0";
-      const numericValue =
-        parseFloat(rowValue.toString().replace("%", "")) || 0;
-      return total + numericValue;
-    }, 0);
-    return ["", cleanPercentageValue(sum)];
-  }),
-]);
+    // Add Percentage Row (row 12)
+    dynamicTableRows.push([
+      "12",
+      "",
+      (() => {
+        const sumValue =
+          parseFloat(
+            (dynamicTableRows[dynamicTableRows.length - 1][2] || "0")
+              .toString()
+              .replace("%", "")
+          ) || 0;
+        const weightage =
+          parseFloat(totalWeight?.toString().replace("%", "")) || 0;
+        const percentage = (sumValue / weightage) * 100;
+        return cleanPercentageValue(percentage);
+      })(),
+      ...columns.flatMap((_, colIndex) => {
+        const withWeightageIndex = colIndex * 2 + 4;
+        const sumValue =
+          parseFloat(
+            (dynamicTableRows[dynamicTableRows.length - 2][withWeightageIndex] ||
+              "0"
+            )
+              .toString()
+              .replace("%", "")
+          ) || 0;
+        const weightage =
+          parseFloat(totalWeight?.toString().replace("%", "")) || 0;
+        const percentage = (sumValue / weightage) * 100;
+        return ["", cleanPercentageValue(percentage)];
+      }),
+    ]);
 
-// Add Percentage Row (row 12)
-dynamicTableRows.push([
-  "12",
-  "",
-  (() => {
-    const sumValue =
-      parseFloat(
-        (dynamicTableRows[dynamicTableRows.length - 1][2] || "0")
-          .toString()
-          .replace("%", "")
-      ) || 0;
-    const weightage =
-      parseFloat(totalWeight?.toString().replace("%", "")) || 0;
-    const percentage = (sumValue / weightage) * 100;
-    return cleanPercentageValue(percentage);
-  })(),
-  ...columns.flatMap((_, colIndex) => {
-    const withWeightageIndex = colIndex * 2 + 4;
-    const sumValue =
-      parseFloat(
-        (dynamicTableRows[dynamicTableRows.length - 2][withWeightageIndex] ||
-          "0"
-        )
-          .toString()
-          .replace("%", "")
-      ) || 0;
-    const weightage =
-      parseFloat(totalWeight?.toString().replace("%", "")) || 0;
-    const percentage = (sumValue / weightage) * 100;
-    return ["", cleanPercentageValue(percentage)];
-  }),
-]);
-
-// Combine static and dynamic tables row-by-row
-const mergedTableData = kpiTableRows.map((staticRow, i) => {
-  let dynamicRow = dynamicTableRows[i] || Array(dynamicTableHeader[3].length).fill("");
-  // Remove the first RTOM area's Achieved KPI and Achieved KPI with Weightage (columns 1 and 2 after RTOM AREA)
-  // That means: remove dynamicRow[1] and dynamicRow[2]
-  if (dynamicRow.length > 3) {
-    dynamicRow = [
-      dynamicRow[0], // rowNum
-      // skip dynamicRow[1] and dynamicRow[2]
-      ...dynamicRow.slice(3)
-    ];
-  }
-  return [...staticRow, ...dynamicRow];
-});
-
-// ...existing code...
+    // Combine static and dynamic tables row-by-row
+    const mergedTableData = kpiTableRows.map((staticRow, i) => {
+      let dynamicRow = dynamicTableRows[i] || Array(dynamicTableHeader[3].length).fill("");
+      // Remove the first RTOM area's Achieved KPI and Achieved KPI with Weightage (columns 1 and 2 after RTOM AREA)
+      // That means: remove dynamicRow[1] and dynamicRow[2]
+      if (dynamicRow.length > 3) {
+        dynamicRow = [
+          dynamicRow[0], // rowNum
+          // skip dynamicRow[1] and dynamicRow[2]
+          ...dynamicRow.slice(3)
+        ];
+      }
+      return [...staticRow, ...dynamicRow];
+    });
 
     // Create worksheet
     const worksheet = workbook.addWorksheet("Merged Table");
@@ -1556,20 +1544,20 @@ const mergedTableData = kpiTableRows.map((staticRow, i) => {
       ["", "", "", "", "", "", "", ...dynamicTableHeader[1]], // Second row of dynamic header
       ["", "", "", "", "", "", "", ...dynamicTableHeader[2]], // Third row of dynamic header
       [
-  "#",
-  "Perspectives",
-  "Strategic Objectives (KRA)",
-  "Key Performance Indicators (KPI)",
-  "Unit",
-  "Description of KPI",
-  "Weightage",
-  "RTOM AREA",
-  // Remove the first two headers for the first RTOM area
-  ...columns.slice(0).flatMap(() => [
-    "Achieved KPI",
-    "Achieved KPI with Weightage",
-  ]),
-], // Static table header merged with RTOM AREA row
+        "#",
+        "Perspectives",
+        "Strategic Objectives (KRA)",
+        "Key Performance Indicators (KPI)",
+        "Unit",
+        "Description of KPI",
+        "Weightage",
+        "RTOM AREA",
+        // Remove the first two headers for the first RTOM area
+        ...columns.slice(0).flatMap(() => [
+          "Achieved KPI",
+          "Achieved KPI with Weightage",
+        ]),
+      ], // Static table header merged with RTOM AREA row
       ...mergedTableData, // Rest of the table data
     ];
 
@@ -1588,8 +1576,6 @@ const mergedTableData = kpiTableRows.map((staticRow, i) => {
     });
 
     // Define the style for the header
-    // Define the style for the header
-    // Apply blue background and white font only to the header cells
     const headerRows = [1, 2, 3, 4]; // The header row indexes
 
     headerRows.forEach((rowIndex) => {
@@ -1626,6 +1612,7 @@ const mergedTableData = kpiTableRows.map((staticRow, i) => {
     });
   };
 
+// ...existing code...
   if (loading) {
     return <div className="loader" style={{ color: "black" }}></div>;
   }
