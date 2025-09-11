@@ -27,10 +27,32 @@ export const clearAllAuthState = () => {
     localStorage.removeItem("name");
     localStorage.removeItem("userData");
 
-    // Clear MSAL cache
-    if (msalInstance) {
-      msalInstance.clearCache();
-    }
+    // Clear MSAL-related storage keys to avoid sticky accounts
+    const clearKeys = (storage) => {
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (!key) continue;
+          if (
+            key.startsWith("msal.") ||
+            key.includes("msal") ||
+            key.includes("aad")
+          ) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => storage.removeItem(k));
+      } catch {}
+    };
+
+    clearKeys(localStorage);
+    clearKeys(sessionStorage);
+
+    // Reset active account reference
+    try {
+      msalInstance.setActiveAccount(null);
+    } catch {}
   } catch (error) {
     console.error("Error clearing auth state:", error);
   }

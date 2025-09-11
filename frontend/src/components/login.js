@@ -1,71 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { PublicClientApplication } from '@azure/msal-browser';
-import './login.css';
-
-// MSAL Configuration
-const msalConfig = {
-  auth: {
-    clientId: '882b0135-bd0b-4ce6-8bef-c4f66ad3d0cc', // Replace with your Azure AD App's Client ID
-    authority: 'https://login.microsoftonline.com/534253fc-dfb6-462f-b5ca-cbe81939f5ee', // Replace with your Azure AD Tenant ID
-    redirectUri: 'http://localhost:3000/', // Replace with your redirect URI
-  },
-  system: {
-    loggerOptions: {
-      loggerCallback: (level, message, containsPii) => {
-        if (!containsPii) console.log(`[MSAL] ${message}`);
-      },
-      logLevel: 2, // Error = 0, Info = 2, Verbose = 3
-    },
-  },
-};
-
-const msalInstance = new PublicClientApplication(msalConfig);
+import React, { useState, useEffect } from "react";
+import { msalInstance, initializeMsal } from "../utils/msalConfig";
+import "./login.css";
 
 const LoginPage = () => {
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize MSAL instance
-useEffect(() => {
-    const initializeMsal = async () => {
+  useEffect(() => {
+    const init = async () => {
       try {
-        await msalInstance.initialize(); // Initialize the MSAL instance
-        setIsInitialized(true);
+        const ok = await initializeMsal();
+        setIsInitialized(!!ok);
       } catch (err) {
-        console.error('MSAL initialization error:', err);
-        setError('Failed to initialize Microsoft login');
+        console.error("MSAL initialization error:", err);
+        setError("Failed to initialize Microsoft login");
       }
     };
 
-    initializeMsal();
+    init();
   }, []);
-
-
-  
-  
 
   const handleAzureLogin = async () => {
     if (!isInitialized) {
-      setError('Microsoft login is not initialized yet. Please try again.');
+      setError("Microsoft login is not initialized yet. Please try again.");
       return;
     }
 
     try {
       // Trigger Microsoft login
       const loginResponse = await msalInstance.loginPopup({
-        scopes: ['User.Read'], // Replace with the scopes your app requires
+        scopes: ["User.Read"], // Replace with the scopes your app requires
+        prompt: "select_account",
       });
+
+      // Set active account so logout uses the correct account
+      if (loginResponse?.account) {
+        msalInstance.setActiveAccount(loginResponse.account);
+      }
 
       const email = loginResponse.account.username; // Get the user's email
       const username = email.substring(0, 6); // Extract username from email
 
       // Send only the username to the backend
       //const response = await fetch('https://localhost:8070/auth/login', {
-        const response = await fetch('/auth/login',{//'https://localhost:8070/auth/login', {
-        method: 'POST',
+      const response = await fetch("/auth/login", {
+        //'https://localhost:8070/auth/login', {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username }),
       });
@@ -74,20 +58,20 @@ useEffect(() => {
 
       if (response.ok) {
         // Save user data
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        localStorage.setItem('name', data.user.name);
-        localStorage.setItem('token', data.token); // Ensure the token is stored
+        localStorage.setItem("userData", JSON.stringify(data.user));
+        localStorage.setItem("name", data.user.name);
+        localStorage.setItem("token", data.token); // Ensure the token is stored
 
-        setSuccess('Login successful');
+        setSuccess("Login successful");
         setTimeout(() => {
-          window.location.href = '/home';
+          window.location.href = "/home";
         }, 1500);
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || "Login failed");
       }
     } catch (err) {
-      setError('An error occurred during Azure login-'+err.message);
-      console.error('Azure login error:', err.message);
+      setError("An error occurred during Azure login-" + err.message);
+      console.error("Azure login error:", err.message);
     }
   };
 
@@ -159,18 +143,13 @@ useEffect(() => {
           <div style={loginBoxStyle}>
             {/* Logo and App Name (Flexbox for side by side) */}
             <div style={logoContainerStyle}>
-              <img
-                src="Logo1.png"
-                alt="Logo"
-                style={logoStyle}
-              />
+              <img src="Logo1.png" alt="Logo" style={logoStyle} />
               <div style={appNameStyle}>
                 <h2 style={appTitleStyle}>Network KPI Monitoring</h2>
               </div>
             </div>
           </div>
 
-          
           {/* Error or Success Messages */}
           {error && <p style={errorStyle}>{error}</p>}
           {success && <p style={successStyle}>{success}</p>}
@@ -195,7 +174,7 @@ const mainContainerStyle = {
   height: "100vh",
   backgroundColor: "#f0f0f0",
   backgroundImage: "url('./Background_login.jpg')",
- // Light gray background for the page
+  // Light gray background for the page
 };
 
 const formWrapperStyle = {
@@ -235,7 +214,6 @@ const logoStyle = {
 
 const appNameStyle = {
   textAlign: "left",
-  
 };
 
 const appTitleStyle = {
@@ -278,6 +256,5 @@ const successStyle = {
   color: "green",
   fontSize: "14px",
 };
-
 
 export default LoginPage;
