@@ -51,12 +51,20 @@ router.post("/add", async (req, res) => {
   } catch (error) {
     console.error("Error adding region data:", error);
 
+    // if (error.code === 11000) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Duplicate entry found",
+    //   });
+    // }
+
     if (error.code === 11000) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: "Duplicate entry found",
+        message: "Duplicate row: (region, province, networkEngineer, lea) must be unique",
       });
     }
+
 
     res.status(500).json({
       success: false,
