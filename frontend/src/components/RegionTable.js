@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import "./RegionTable.css";
+import { FiTrash2 } from "react-icons/fi";
+import { FiEdit2 } from "react-icons/fi";
 
 const RegionTable = () => {
   const [formData, setFormData] = useState({
@@ -238,7 +240,7 @@ const RegionTable = () => {
     <div className="region-table-container">
       <div className="region-table-header">
         <h1>Region Management</h1>
-        <p>Manage Region, Province, Network Engineer and LEA information</p>
+        <p>Manage Region, Province, Network Engineer and LEA information </p>
       </div>
 
       {/* Form Section */}
@@ -250,6 +252,7 @@ const RegionTable = () => {
             onClick={() => setShowMoveForm(true)}
             className="move-lea-btn"
             title="Move LEA to different Network Engineer"
+            
           >
             📦 Move LEA
           </button>
@@ -476,7 +479,9 @@ const RegionTable = () => {
                       <td className="lea-name">
                         <strong>{item.lea}</strong>
                       </td> */}
-                      <td className="engineer-name">
+                      
+                       {/* Inline editable cells for Network Engineer and LEA */}
+                    <td className="engineer-name">
                       <EditableCell
                         value={item.networkEngineer ?? ""}
                         onSave={(val) => handleInlineEdit(item._id, "networkEngineer", val)}
@@ -491,7 +496,7 @@ const RegionTable = () => {
                       />
                     </td>
 
-                      <td style={{ textAlign: "center" }}>
+                      {/* <td style={{ textAlign: "center" }}>
                         <button
                           onClick={() => handleDelete(item._id)}
                           className="delete-btn"
@@ -499,7 +504,21 @@ const RegionTable = () => {
                         >
                           🗑️
                         </button>
+                      </td> */}
+
+                          {/* Delete icon added*/}
+                      <td className="actions-cell">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item._id)}
+                          className="delete-btn"
+                          title="Delete this region data entry"
+                          aria-label="Delete"
+                        >
+                          <FiTrash2 className="icon" />
+                        </button>
                       </td>
+
                     </tr>
                   ))
                 )}
@@ -536,33 +555,75 @@ const EditableCell = ({ value, onSave }) => {
       handleCancel();
     }
   };
-
+      ///
+      //  return (
+      //     <div className="editable-cell">
+      //       {isEditing ? (
+      //         <div className="edit-mode">
+      //           <input
+      //             type="text"
+      //             value={editValue}
+      //             onChange={(e) => setEditValue(e.target.value)}
+      //             onKeyDown={handleKeyPress}
+      //             onBlur={handleSave}
+      //             autoFocus
+      //             className="edit-input"
+      //           />
+      //         </div>
+      //       ) : (
+      //         <div
+      //           className="view-mode"
+      //           onClick={() => setIsEditing(true)}
+      //           title="Click to edit"
+      //         >
+      //           {value}
+      //           <span className="edit-icon">✏️ Edit</span>
+      //         </div>
+      //       )}
+      //     </div>
+      //   );  
   return (
-    <div className="editable-cell">
-      {isEditing ? (
-        <div className="edit-mode">
-          <input
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            onBlur={handleSave}
-            autoFocus
-            className="edit-input"
-          />
-        </div>
-      ) : (
-        <div
-          className="view-mode"
-          onClick={() => setIsEditing(true)}
-          title="Click to edit"
+  <div className="editable-cell">
+    {isEditing ? (
+      <div className="edit-mode">
+        <input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyPress}
+          onBlur={handleSave}
+          autoFocus
+          className="edit-input"
+          aria-label="Editing cell"
+        />
+      </div>
+    ) : (
+      <div
+        className="view-mode"
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsEditing(true)}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setIsEditing(true)}
+        title="Click to edit"
+        aria-label="Edit cell"
+      >
+        {value || <span className="placeholder">—</span>}
+        <button
+          type="button"
+          className="edit-btn"
+          aria-label="Edit"
+          onClick={(e) => {
+            e.stopPropagation(); // don't bubble to parent
+            setIsEditing(true);
+          }}
         >
-          {value}
-          <span className="edit-icon">✏️ Edit</span>
-        </div>
-      )}
-    </div>
-  );
+          <FiEdit2 className="icon" />
+        </button>
+      </div>
+    )}
+  </div>
+);
+
 };
 
 
