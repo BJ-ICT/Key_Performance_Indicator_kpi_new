@@ -470,12 +470,27 @@ const RegionTable = () => {
                       <td className="province-name">
                         <strong>{item.province}</strong>
                       </td>
-                      <td className="engineer-name">
+                      {/* <td className="engineer-name">
                         <strong>{item.networkEngineer}</strong>
                       </td>
                       <td className="lea-name">
                         <strong>{item.lea}</strong>
-                      </td>
+                      </td> */}
+                      <td className="engineer-name">
+                      <EditableCell
+                        value={item.networkEngineer ?? ""}
+                        onSave={(val) => handleInlineEdit(item._id, "networkEngineer", val)}
+                        ariaLabel={`Edit network engineer for ${item.region} - ${item.province}`}
+                      />
+                    </td>
+                    <td className="lea-name">
+                      <EditableCell
+                        value={item.lea ?? ""}
+                        onSave={(val) => handleInlineEdit(item._id, "lea", val)}
+                        ariaLabel={`Edit LEA for ${item.region} - ${item.province}`}
+                      />
+                    </td>
+
                       <td style={{ textAlign: "center" }}>
                         <button
                           onClick={() => handleDelete(item._id)}
@@ -543,7 +558,7 @@ const EditableCell = ({ value, onSave }) => {
           title="Click to edit"
         >
           {value}
-          <span className="edit-icon">✏️</span>
+          <span className="edit-icon">✏️ Edit</span>
         </div>
       )}
     </div>

@@ -47,8 +47,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // SSL certificate paths
-const sslKeyPath = path.resolve(__dirname, "../ssl/socapplications.key");
-const sslCertPath = path.resolve(__dirname, "../ssl/socapplications.crt");
+const sslKeyPath = path.resolve(__dirname, "./ssl/socapplications.key");
+const sslCertPath = path.resolve(__dirname, "./ssl/socapplications.crt");
 
 // Read SSL certificate files
 const sslOptions = {
