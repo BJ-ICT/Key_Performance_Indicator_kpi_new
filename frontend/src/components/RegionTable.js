@@ -217,7 +217,7 @@ const RegionTable = () => {
 
   // Function to handle inline editing for Network Engineer and LEA only
   const handleInlineEdit = async (id, field, value) => {
-    if (field !== "networkEngineer" && field !== "lea") {
+    if (field !== "networkEngineer" && field !== "lea" && field !== "region" && field !== "province") {
       return; // Only allow editing of Network Engineer and LEA
     }
 
@@ -495,6 +495,7 @@ const RegionTable = () => {
                         ariaLabel={`Edit LEA for ${item.region} - ${item.province}`}
                       />
                     </td>
+                   
 
                       {/* <td style={{ textAlign: "center" }}>
                         <button
