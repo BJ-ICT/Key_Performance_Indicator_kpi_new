@@ -61,10 +61,10 @@ router.post("/add", async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "Duplicate row: (region, province, networkEngineer, lea) must be unique",
+        message:
+          "Duplicate row: (region, province, networkEngineer, lea) must be unique",
       });
     }
-
 
     res.status(500).json({
       success: false,
@@ -230,21 +230,24 @@ router.post("/move-lea", async (req, res) => {
   }
 });
 
-
-
 // PATCH /api/region-table/update-fields/:id - Update specific fields
 router.patch("/update-fields/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
 
-    // Only allow updating networkEngineer and lea fields
-    const allowedFields = ["networkEngineer", "lea"];
+    // ✅ allow updating all four fields
+    const allowedFields = ["networkEngineer", "lea", "region", "province"];
     const filteredUpdates = {};
 
-    for (const [key, value] of Object.entries(updates)) {
-      if (allowedFields.includes(key) && value !== undefined) {
-        filteredUpdates[key] = value.trim();
+    for (const [key, value] of Object.entries(updates || {})) {
+      if (!allowedFields.includes(key)) continue;
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed) filteredUpdates[key] = trimmed;
+      } else if (value !== undefined && value !== null) {
+        filteredUpdates[key] = value;
       }
     }
 
@@ -257,8 +260,8 @@ router.patch("/update-fields/:id", async (req, res) => {
 
     const updatedEntry = await RegionTable.findByIdAndUpdate(
       id,
-      filteredUpdates,
-      { new: true }
+      { $set: filteredUpdates },
+      { new: true, runValidators: true }
     );
 
     if (!updatedEntry) {
@@ -270,11 +273,20 @@ router.patch("/update-fields/:id", async (req, res) => {
 
     res.json({
       success: true,
-      message: `${Object.keys(filteredUpdates)[0]} updated successfully`,
+      message: "Updated successfully",
       data: updatedEntry,
     });
   } catch (error) {
     console.error("Error updating fields:", error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Duplicate row: (region, province, networkEngineer, lea) must be unique",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to update fields",

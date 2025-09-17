@@ -226,11 +226,13 @@ const RegionTable = () => {
         [field]: value,
       });
       fetchRegionData();
-      setSuccess(
-        `${
-          field === "networkEngineer" ? "Network Engineer" : "LEA"
-        } updated successfully`
-      );
+      const labelMap = {
+        networkEngineer: "Network Engineer",
+        lea: "LEA",
+        region: "Region",
+        province: "Province",
+      };
+      setSuccess(`${labelMap[field] || field} updated successfully`);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update field");
     }
@@ -467,47 +469,43 @@ const RegionTable = () => {
                 ) : (
                   sortedData.map((item) => (
                     <tr key={item._id}>
+                      {/* Region editable */}
                       <td className="region-name">
-                        <strong>{item.region}</strong>
+                        <EditableCell
+                          value={item.region ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "region", val)
+                          }
+                        />
                       </td>
+                      {/* Province editable */}
                       <td className="province-name">
-                        <strong>{item.province}</strong>
+                        <EditableCell
+                          value={item.province ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "province", val)
+                          }
+                        />
                       </td>
-                      {/* <td className="engineer-name">
-                        <strong>{item.networkEngineer}</strong>
+
+                      {/* Inline editable cells for Network Engineer and LEA */}
+                      <td className="engineer-name">
+                        <EditableCell
+                          value={item.networkEngineer ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "networkEngineer", val)
+                          }
+                        />
                       </td>
                       <td className="lea-name">
-                        <strong>{item.lea}</strong>
-                      </td> */}
-                      
-                       {/* Inline editable cells for Network Engineer and LEA */}
-                    <td className="engineer-name">
-                      <EditableCell
-                        value={item.networkEngineer ?? ""}
-                        onSave={(val) => handleInlineEdit(item._id, "networkEngineer", val)}
-                        ariaLabel={`Edit network engineer for ${item.region} - ${item.province}`}
-                      />
-                    </td>
-                    <td className="lea-name">
-                      <EditableCell
-                        value={item.lea ?? ""}
-                        onSave={(val) => handleInlineEdit(item._id, "lea", val)}
-                        ariaLabel={`Edit LEA for ${item.region} - ${item.province}`}
-                      />
-                    </td>
-                   
+                        <EditableCell
+                          value={item.lea ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "lea", val)
+                          }
+                        />
+                      </td>
 
-                      {/* <td style={{ textAlign: "center" }}>
-                        <button
-                          onClick={() => handleDelete(item._id)}
-                          className="delete-btn"
-                          title="Delete this region data entry"
-                        >
-                          🗑️
-                        </button>
-                      </td> */}
-
-                          {/* Delete icon added*/}
                       <td className="actions-cell">
                         <button
                           type="button"
@@ -519,7 +517,6 @@ const RegionTable = () => {
                           <FiTrash2 className="icon" />
                         </button>
                       </td>
-
                     </tr>
                   ))
                 )}
