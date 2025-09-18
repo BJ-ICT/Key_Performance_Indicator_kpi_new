@@ -12,8 +12,8 @@ import { saveAs } from "file-saver";
 import ProtectedComponent from "./ProtectedComponent ";
 import ExcelJS from "exceljs";
 
-// Columns for Platform Distribution & Achievements
-const columns = [
+// Default Columns for Platform Distribution & Achievements (used as fallback)
+const defaultColumns = [
   "NW/WPC-1(CEN/HK/MD)",
   "NW/WPC-2 (CEN/HK/MD)",
   "NW/WPNE",
@@ -123,9 +123,9 @@ const calcTotals = (data, mult) => {
   return t;
 };
 
-const computePercentages = (f, s) => {
+const computePercentages = (f, s, cols) => {
   const p = {};
-  columns.forEach((col) => {
+  (cols || defaultColumns).forEach((col) => {
     const k = columnToKeyMap[col],
       fv = parseFloat(f?.[k]) || 0,
       sv = parseFloat(s?.[k]) || 0;
@@ -146,6 +146,9 @@ export default function FinalTables() {
   const [f6, setF6] = useState([]),
     [f7, setF7] = useState([]),
     [f8, setF8] = useState([]);
+  // Dynamic columns built from Region→Province→Engineer hierarchy
+  const [columns, setColumns] = useState(defaultColumns);
+  const [regionHierarchy, setRegionHierarchy] = useState([]); // [{ name, provinces:[{ name, engineers:["..."], totalEngineers }], totalEngineers }]
   const [subs, setSubs] = useState({});
   const [servFulOkRow, setServFulOkRow] = useState({});
   const [kpiRes, setKpiRes] = useState([]),
@@ -199,14 +202,92 @@ export default function FinalTables() {
    * }
    */
   const columnsAchievedRef = useRef({
-    row1: Array(columns.length).fill(0),
-    row2: Array(columns.length).fill(0),
-    row3: Array(columns.length).fill(0),
-    row5: Array(columns.length).fill(0),
-    row6: Array(columns.length).fill(0),
-    row7: Array(columns.length).fill(0),
-    row10: Array(columns.length).fill(0),
+    row1: Array((columns || []).length).fill(0),
+    row2: Array((columns || []).length).fill(0),
+    row3: Array((columns || []).length).fill(0),
+    row5: Array((columns || []).length).fill(0),
+    row6: Array((columns || []).length).fill(0),
+    row7: Array((columns || []).length).fill(0),
+    row10: Array((columns || []).length).fill(0),
   });
+
+  // Reinitialize columnsAchievedRef arrays if columns change
+  useEffect(() => {
+    const len = (columns || []).length;
+    columnsAchievedRef.current = {
+      row1: Array(len).fill(0),
+      row2: Array(len).fill(0),
+      row3: Array(len).fill(0),
+      row5: Array(len).fill(0),
+      row6: Array(len).fill(0),
+      row7: Array(len).fill(0),
+      row10: Array(len).fill(0),
+    };
+  }, [columns]);
+
+  // ============= Fetch Region Table => Build hierarchy and dynamic columns =============
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get("/api/region-table");
+        let rows = res?.data?.data || [];
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        // Preserve stable order by oldest-first (createdAt ascending) if available
+        rows = rows.slice().sort((a, b) => {
+          const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return da - db;
+        });
+
+        // Group: Region → Province → Engineers; preserve insertion order
+        const regionMap = new Map();
+        rows.forEach((r) => {
+          const region = (r.region || "").trim();
+          const province = (r.province || "").trim();
+          const engineer = (r.networkEngineer || "").trim();
+          if (!region || !province || !engineer) return;
+
+          if (!regionMap.has(region)) regionMap.set(region, new Map());
+          const provMap = regionMap.get(region);
+          if (!provMap.has(province)) provMap.set(province, new Set());
+          const engSet = provMap.get(province);
+          engSet.add(engineer);
+        });
+
+        const hierarchy = [];
+        const flatEngineers = [];
+        regionMap.forEach((provMap, regionName) => {
+          const provinces = [];
+          let regionEngineerCount = 0;
+          provMap.forEach((engSet, provName) => {
+            const engineers = Array.from(engSet);
+            engineers.forEach((e) => flatEngineers.push(e));
+            provinces.push({ name: provName, engineers, totalEngineers: engineers.length });
+            regionEngineerCount += engineers.length;
+          });
+          hierarchy.push({ name: regionName, provinces, totalEngineers: regionEngineerCount });
+        });
+
+        // Build columns preserving previous order: start with defaults, append any new engineers
+        const seen = new Set(defaultColumns);
+        const dynamicCols = [...defaultColumns];
+        flatEngineers.forEach((e) => {
+          if (!seen.has(e)) {
+            dynamicCols.push(e);
+            seen.add(e);
+          }
+        });
+
+        // Fallback to defaults if intersection is empty
+        setColumns(dynamicCols.length ? dynamicCols : defaultColumns);
+        setRegionHierarchy(hierarchy);
+      } catch (e) {
+        console.error("Error fetching Region Table:", e);
+        // Keep defaults if API fails
+      }
+    })();
+  }, []);
 
   // ============= Fetching form6, form7, form8 => subTotals =============
   useEffect(() => {
@@ -349,7 +430,8 @@ export default function FinalTables() {
             kpiPercent: kpi_percent,
             percentages: computePercentages(
               Total_Failed_Links,
-              Links_SLA_Not_Violated
+              Links_SLA_Not_Violated,
+              columns
             ),
           });
         }
@@ -361,7 +443,8 @@ export default function FinalTables() {
             kpiPercent: kpi_percent,
             percentages: computePercentages(
               Total_Failed_Links,
-              Links_SLA_Not_Violated
+              Links_SLA_Not_Violated,
+              columns
             ),
           });
         }
@@ -1724,21 +1807,27 @@ export default function FinalTables() {
               <thead>
                 <tr style={{ height: "1px" }}>
                   <th>R-GM</th>
-                  <th colSpan="12">Metro</th>
-                  <th colSpan="12">Region 1</th>
-                  <th colSpan="10">Region 2</th>
-                  <th colSpan="6">Region 3</th>
+                  {regionHierarchy.length
+                    ? regionHierarchy.map((rg) => (
+                        <th key={rg.name} colSpan={(rg.totalEngineers || 0) * 2}>
+                          {rg.name}
+                        </th>
+                      ))
+                    : (
+                        <th colSpan={columns.length * 2}>Regions</th>
+                      )}
                 </tr>
                 <tr>
                   <th>P-DGM</th>
-                  <th colSpan="6">Metro 1</th>
-                  <th colSpan="6">Metro 2</th>
-                  <th colSpan="6">WPN & NWP</th>
-                  <th colSpan="6">CP & NCP</th>
-                  <th colSpan="4">SAB & UVA</th>
-                  <th colSpan="6">WPS & SP</th>
-                  <th colSpan="2">EP</th>
-                  <th colSpan="4">NP</th>
+                  {regionHierarchy.length
+                    ? regionHierarchy.flatMap((rg) =>
+                        rg.provinces.map((pv) => (
+                          <th key={`${rg.name}-${pv.name}`} colSpan={(pv.totalEngineers || 0) * 2}>
+                            {pv.name}
+                          </th>
+                        ))
+                      )
+                    : null}
                 </tr>
                 <tr>
                   <th>NW EE</th>

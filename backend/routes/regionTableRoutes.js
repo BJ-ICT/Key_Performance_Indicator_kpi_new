@@ -96,7 +96,7 @@ router.put("/update/:id", async (req, res) => {
         networkEngineer: networkEngineer.trim(),
         lea: lea.trim(),
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!updatedEntry) {
@@ -113,6 +113,15 @@ router.put("/update/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating region data:", error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Duplicate row: (region, province, networkEngineer, lea) must be unique",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to update region data",
