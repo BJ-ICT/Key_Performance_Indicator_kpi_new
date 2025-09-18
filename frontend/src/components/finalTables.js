@@ -93,6 +93,31 @@ function parsePct(str) {
 }
 
 // Utility Functions
+// Normalize a display label to a canonical base code used by columnToKeyMap and data feeds
+const getBaseCodeFromLabel = (label) => {
+  if (!label) return "";
+  const s = String(label).trim();
+  // Capture family and optional numeric suffix, e.g., "NW/WPC-1", "NW/WPC-2", "NW/WPNE"
+  const m = s.match(/^(NW\/[A-Z0-9]+(?:-[0-9]+)?)/);
+  return m ? m[1] : s;
+};
+
+// Resolve the backend data key (e.g., 'cenhkmd') for a given display label
+const resolveDataKey = (label) => {
+  const base = getBaseCodeFromLabel(label);
+  return columnToKeyMap[base];
+};
+
+// Map a possibly renamed display label to the canonical display name used in data sources
+const getCanonicalDisplayForLookup = (label) => {
+  const base = getBaseCodeFromLabel(label);
+  // Find the default column whose base matches
+  for (let i = 0; i < defaultColumns.length; i++) {
+    if (getBaseCodeFromLabel(defaultColumns[i]) === base) return defaultColumns[i];
+  }
+  return label;
+};
+
 const calcPct = (tm, um, tn) => {
   if (!tm && !um && !tn) return 100;
   const days = new Date(
@@ -269,15 +294,32 @@ export default function FinalTables() {
           hierarchy.push({ name: regionName, provinces, totalEngineers: regionEngineerCount });
         });
 
-        // Build columns preserving previous order: start with defaults, append any new engineers
-        const seen = new Set(defaultColumns);
-        const dynamicCols = [...defaultColumns];
-        flatEngineers.forEach((e) => {
-          if (!seen.has(e)) {
-            dynamicCols.push(e);
-            seen.add(e);
+        // Build columns by base code. Keep default base order, override display with Region labels.
+        const baseOrder = defaultColumns.map((d) => getBaseCodeFromLabel(d));
+        const baseToDisplay = new Map();
+        // seed with defaults
+        defaultColumns.forEach((d) => {
+          baseToDisplay.set(getBaseCodeFromLabel(d), d);
+        });
+        // override with region labels for same base
+        flatEngineers.forEach((label) => {
+          const base = getBaseCodeFromLabel(label);
+          if (baseToDisplay.has(base)) {
+            baseToDisplay.set(base, label);
           }
         });
+        // collect any truly new bases (not in defaults) to append
+        const appended = [];
+        flatEngineers.forEach((label) => {
+          const base = getBaseCodeFromLabel(label);
+          if (!baseToDisplay.has(base) && !appended.find((x) => getBaseCodeFromLabel(x) === base)) {
+            appended.push(label);
+          }
+        });
+        const dynamicCols = [
+          ...baseOrder.map((b) => baseToDisplay.get(b)).filter(Boolean),
+          ...appended,
+        ];
 
         // Fallback to defaults if intersection is empty
         setColumns(dynamicCols.length ? dynamicCols : defaultColumns);
@@ -650,7 +692,8 @@ export default function FinalTables() {
           headerMap[h] = i;
         });
         const finalSums = columns.map((col) => {
-          const idx = headerMap[col];
+          const display = getCanonicalDisplayForLookup(col);
+          const idx = headerMap[display];
           return typeof idx === "number" && idx >= 0 ? finalSum[idx] : "0.00";
         });
 
@@ -679,12 +722,13 @@ export default function FinalTables() {
           columns.forEach((col) => {
             let totalAch = 0,
               totalDist = 0;
+            const display = getCanonicalDisplayForLookup(col);
             months.forEach((mnth) => {
               const found = data.find((e) => e.month === mnth);
               if (found && found.details) {
                 try {
                   const arr = found.details;
-                  const cItem = arr.find((x) => x.Column1 === col);
+                  const cItem = arr.find((x) => x.Column1 === display);
                   if (cItem) {
                     totalAch += parseFloat(cItem.Column3) || 0;
                     totalDist += parseFloat(cItem.Column2) || 0;
@@ -722,9 +766,10 @@ export default function FinalTables() {
         // Compute final averagePlaceholder
         const averagePl = {};
         columns.forEach((col) => {
-          const mVal = parseFloat(msanPl[col]) || 0;
-          const vVal = parseFloat(vpnPl[col]) || 0;
-          const sVal = parseFloat(slbnPl[col]) || 0;
+          const display = getCanonicalDisplayForLookup(col);
+          const mVal = parseFloat(msanPl[display]) || 0;
+          const vVal = parseFloat(vpnPl[display]) || 0;
+          const sVal = parseFloat(slbnPl[display]) || 0;
 
           // If all three are zero, default to "100.00"
           if (mVal === 0 && vVal === 0 && sVal === 0) {
@@ -934,7 +979,8 @@ export default function FinalTables() {
 
     // Compute per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const val = kpiItem.percentages[col] || "0.00";
+      const display = getCanonicalDisplayForLookup(col);
+      const val = kpiItem.percentages[display] || "0.00";
       return rAchievedW(val, threshold, wg);
     });
 
@@ -949,7 +995,8 @@ export default function FinalTables() {
         <td></td>
 
         {columns.map((col, i) => {
-          const val = kpiItem.percentages[col] || "0.00";
+          const display = getCanonicalDisplayForLookup(col);
+          const val = kpiItem.percentages[display] || "0.00";
           return (
             <React.Fragment key={col}>
               <td>{rAchieved(val, threshold)}</td>
@@ -972,7 +1019,7 @@ export default function FinalTables() {
 
     // Per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const k = columnToKeyMap[col];
+      const k = resolveDataKey(col);
       const val = (subs[k] || 0).toFixed(2);
       return rFinalDataRowWithWeightage(val);
     });
@@ -988,7 +1035,7 @@ export default function FinalTables() {
         <td></td>
 
         {columns.map((col, i) => {
-          const k = columnToKeyMap[col];
+          const k = resolveDataKey(col);
           const numericVal = subs[k] || 0;
           const strVal = numericVal.toFixed(2);
           return (
@@ -1013,7 +1060,8 @@ export default function FinalTables() {
 
     // Per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const val = averagePlaceholder[col] || "0.00";
+      const display = getCanonicalDisplayForLookup(col);
+      const val = averagePlaceholder[display] || "0.00";
       return rCurrentMonthWithWeightage(parseFloat(val) || 0);
     });
 
@@ -1028,7 +1076,8 @@ export default function FinalTables() {
         <td></td>
 
         {columns.map((col, i) => {
-          const val = averagePlaceholder[col] || "0.00";
+          const display = getCanonicalDisplayForLookup(col);
+          const val = averagePlaceholder[display] || "0.00";
           return (
             <React.Fragment key={col}>
               <td>{val + "%"}</td>
@@ -1053,7 +1102,7 @@ export default function FinalTables() {
 
     // Per-column
     const colArr = columns.map((col) => {
-      const key = columnToKeyMap[col];
+      const key = resolveDataKey(col);
       const val = servFulOkRow[key] ? parseFloat(servFulOkRow[key]) || 0 : 0;
       return rServFulOkWithWeightage(val);
     });
@@ -1069,7 +1118,7 @@ export default function FinalTables() {
         <td></td>
 
         {columns.map((col, i) => {
-          const key = columnToKeyMap[col];
+          const key = resolveDataKey(col);
           const rawVal = servFulOkRow[key]
             ? parseFloat(servFulOkRow[key]) || 0
             : 0;
@@ -1469,7 +1518,7 @@ export default function FinalTables() {
 
   const buildRowFinalData = () => {
     return ["", ...columns.flatMap((col) => {
-      const key = columnToKeyMap[col];
+      const key = resolveDataKey(col);
       const raw = num(subs?.[key] ?? 0);  // number 0..100
       const ach = pct(raw);
       const achW = rFinalDataRowWithWeightage(raw);
@@ -1488,7 +1537,7 @@ export default function FinalTables() {
 
   const buildRowServFulOk = () => {
     return ["", ...columns.flatMap((col) => {
-      const key = columnToKeyMap[col];
+      const key = resolveDataKey(col);
       const raw = num(servFulOkRow?.[key] ?? 0);
       const ach = pct(raw);
       const achW = rServFulOkWithWeightage(raw);
