@@ -1853,7 +1853,7 @@ export default function FinalTables() {
                     : null}
                 </tr>
                 <tr>
-                  <th>NW EE</th>
+                  <th>NW EE / RTOM AREA</th>
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
@@ -1863,7 +1863,7 @@ export default function FinalTables() {
                 </tr>
 
                 <tr>
-                  <th>RTOM AREA</th>
+                  <th> </th>
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
@@ -1927,4 +1927,4 @@ export default function FinalTables() {
   );
 }
 
-// ==================== End of FinalTables.js ====================
+//
