@@ -58,16 +58,20 @@
 .final-maintenance-table th,
 .final-distribution-table th,
 .kpi-table th {
+    font-family: poppins, sans-serif;
     background-color: #2196f3;
     color: white;
     text-align: center;
+    text-decoration: double;
     padding: 12px;
     font-size: 14px;
     border: 1px solid #0f0f0f;
-    height: 40px;
+    height: 10px;
     line-height: 40px;
     white-space: nowrap;
 }
+
+
 
 /* Body cell styling */
 .final-maintenance-table td,
@@ -111,7 +115,7 @@
     text-align: center;
     font-size: 12px;
     padding: 8px;
-    background-color: #1976d2;
+    background-color: #3270ae;
     color: white;
 }
 

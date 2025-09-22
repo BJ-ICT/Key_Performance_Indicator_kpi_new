@@ -1118,11 +1118,7 @@ const render12thRowDividedByKpiWeightageAsArray = () => {
 </div>
 </ProtectedComponent>
   );
- 
-  
-   
-  
   
 }
 
-// ==================== End of FinalTables.js ====================
+// =
