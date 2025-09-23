@@ -58,7 +58,7 @@
 .final-maintenance-table th,
 .final-distribution-table th,
 .kpi-table th {
-    font-family: poppins, sans-serif;
+    font-family:poppins, sans-serif;
     background-color: #2196f3;
     color: white;
     text-align: center;
@@ -100,14 +100,12 @@
 .kpi-table tbody tr:nth-child(even) {
     background-color: #ffffff;
 }
-
-/* Hover effect */
-.final-maintenance-table tbody tr:hover,
-.final-distribution-table tbody tr:hover,
-.kpi-table tbody tr:hover {
-    background-color: #bbdefb;
-    cursor: pointer;
+.final-maintenance-table td,
+.final-distribution-table td,
+.kpi-table td {
+  background-color: transparent;
 }
+
 
 /* Column headers with colspan */
 .final-distribution-table th[colspan],
@@ -115,7 +113,7 @@
     text-align: center;
     font-size: 12px;
     padding: 8px;
-    background-color: #3270ae;
+    background-color: #448fda;
     color: white;
 }
 
