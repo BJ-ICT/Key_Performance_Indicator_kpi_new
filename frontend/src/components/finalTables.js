@@ -1740,34 +1740,7 @@ export default function FinalTables() {
   return (
     <ProtectedComponent>
       <div className="final-tables-container">
-        {/* <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '65px',
-        marginBottom: '15px',
-        justifyContent: 'flex-start',
-        padding: '0 20px',
-        marginTop: '30px',
-      }}
-    >
-      {row12Data.map((val, idx) => (
-        <div key={idx} style={{ width: '120px', textAlign: 'center' }}>
-          <CircularProgressbar
-            value={val}
-            maxValue={100}
-            text={`${val}%`}
-            styles={buildStyles({
-              pathColor: `rgba(62, 152, 199, ${val / 100})`,
-              textColor: '#000',
-              trailColor: '#d6d6d6',
-              backgroundColor: '#f3f3f3',
-            })}
-          />
-          <p style={{ marginTop: '10px' ,color: 'black'  }}>{columns[idx]}</p>
-        </div>
-      ))}
-    </div> */}
+        {/*/}
 
         {/* Title */}
         <h1 className="final-tables-title">Final KPI</h1>
