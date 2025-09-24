@@ -1,10 +1,9 @@
-// excel ek dala .wde goda
 // src/components/FinalTables.js
 
 import axios from "axios";
 import { FiTrash2 } from "react-icons/fi";
 import React, { useEffect, useRef, useState } from "react";
-import ReactSpeedometer from "react-d3-speedometer"; // Single Speedometer import
+import ReactSpeedometer from "react-d3-speedometer";
 import "./finalTables.css";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -13,7 +12,8 @@ import { saveAs } from "file-saver";
 import ProtectedComponent from "./ProtectedComponent ";
 import ExcelJS from "exceljs";
 
-// Default Columns for Platform Distribution & Achievements (used as fallback)
+/* ------------------ Constants ------------------ */
+
 const defaultColumns = [
   "NW/WPC-1(CEN/HK/MD)",
   "NW/WPC-2 (CEN/HK/MD)",
@@ -37,7 +37,6 @@ const defaultColumns = [
   "NW/NP-2",
 ];
 
-// Mapping column names => DB keys
 const columnToKeyMap = {
   "NW/WPC": "cenhkmd",
   "NW/WPNE": "gqkintb",
@@ -60,7 +59,6 @@ const columnToKeyMap = {
   "NW/NP-2": "komltmbva",
 };
 
-// Mapping for ServFulOk keys => final keys
 const servFulOkMap = {
   CENHKMD: "cenhkmd",
   CENHKMD1: "cenhkmd1",
@@ -84,35 +82,24 @@ const servFulOkMap = {
   KOMLTMBVA: "komltmbva",
 };
 
-// Multipliers for ServFulOk rows
 const servFulOkRowMultipliers = [0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.05, 0.05];
 
-// Helper to parse "12.34%" => 12.34
-function parsePct(str) {
-  if (!str) return 0;
-  return parseFloat(String(str).replace("%", "")) || 0;
-}
+/* ------------------ Helpers ------------------ */
 
-// Utility Functions
-// Normalize a display label to a canonical base code used by columnToKeyMap and data feeds
 const getBaseCodeFromLabel = (label) => {
   if (!label) return "";
   const s = String(label).trim();
-  // Capture family and optional numeric suffix, e.g., "NW/WPC-1", "NW/WPC-2", "NW/WPNE"
   const m = s.match(/^(NW\/[A-Z0-9]+(?:-[0-9]+)?)/);
   return m ? m[1] : s;
 };
 
-// Resolve the backend data key (e.g., 'cenhkmd') for a given display label
 const resolveDataKey = (label) => {
   const base = getBaseCodeFromLabel(label);
   return columnToKeyMap[base];
 };
 
-// Map a possibly renamed display label to the canonical display name used in data sources
 const getCanonicalDisplayForLookup = (label) => {
   const base = getBaseCodeFromLabel(label);
-  // Find the default column whose base matches
   for (let i = 0; i < defaultColumns.length; i++) {
     if (getBaseCodeFromLabel(defaultColumns[i]) === base) return defaultColumns[i];
   }
@@ -121,11 +108,7 @@ const getCanonicalDisplayForLookup = (label) => {
 
 const calcPct = (tm, um, tn) => {
   if (!tm && !um && !tn) return 100;
-  const days = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    0
-  ).getDate();
+  const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
   const total = 24 * 60 * days * tn;
   const avail = tm - um;
   return total ? (100 * avail) / total : 0;
@@ -156,7 +139,6 @@ const computePercentages = (f, s, cols) => {
       fv = parseFloat(f?.[k]) || 0,
       sv = parseFloat(s?.[k]) || 0;
 
-    // If both values are 0, set percentage to 100
     if (fv === 0 && sv === 0) {
       p[col] = "100.00";
     } else {
@@ -1291,9 +1273,25 @@ export default function FinalTables() {
       }
       return "0.00";
     });
+
     setRow12Data(finalValues);
     console.log("Row12 Data for Speedometers:", finalValues);
-  }, [achievedKpiWithWeightage, totalWeight]);
+
+    // ALSO PUBLISH FOR DASHBOARD FALLBACK
+    try {
+      const columnsList = columns.slice(); // current meter order
+      const valuesByMeter = {};
+      columnsList.forEach((m, i) => { valuesByMeter[m] = parseFloat(finalValues[i]) || 0; });
+      window.localStorage.setItem(
+        "row12Payload",
+        JSON.stringify({ columns: columnsList, values: finalValues, valuesByMeter })
+      );
+    } catch (e) {
+      // ignore if SSR or storage quota
+    }
+  }, [achievedKpiWithWeightage, totalWeight, columns]);
+
+
 
   /////////////////////////////////////////////////
 
