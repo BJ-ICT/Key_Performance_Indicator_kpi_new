@@ -2,6 +2,7 @@
 // src/components/FinalTables.js
 
 import axios from "axios";
+import { FiTrash2 } from "react-icons/fi";
 import React, { useEffect, useRef, useState } from "react";
 import ReactSpeedometer from "react-d3-speedometer"; // Single Speedometer import
 import "./finalTables.css";

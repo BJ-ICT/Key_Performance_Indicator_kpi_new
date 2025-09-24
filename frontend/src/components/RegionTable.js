@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import "./RegionTable.css";
-import { FiTrash2 } from "react-icons/fi";
-import { FiEdit2 } from "react-icons/fi";
+import { FiTrash2, FiEdit2 } from "react-icons/fi";
 
 const RegionTable = () => {
   const [formData, setFormData] = useState({
