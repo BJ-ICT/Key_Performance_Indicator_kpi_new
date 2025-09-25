@@ -39,7 +39,7 @@
 
 /* Remove the padding top from KPI table */
 .side-by-side-tables .kpi-table-container {
-    padding-top: 171px;
+    padding-top: 110px;
 }
 
 /* General table styling */
@@ -67,7 +67,7 @@
     font-size: 14px;
     border: 1px solid #0f0f0f;
     height: 10px;
-    line-height: 40px;
+    line-height: 20px;
     white-space: nowrap;
 }
 
