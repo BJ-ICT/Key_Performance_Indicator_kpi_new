@@ -975,7 +975,7 @@ export default function FinalTables() {
 
     return (
       <tr key={kpiItem.kpiName}>
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const display = getCanonicalDisplayForLookup(col);
@@ -1015,7 +1015,7 @@ export default function FinalTables() {
 
     return (
       <tr key="final-data-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const k = resolveDataKey(col);
@@ -1056,7 +1056,7 @@ export default function FinalTables() {
 
     return (
       <tr key="average-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const display = getCanonicalDisplayForLookup(col);
@@ -1098,7 +1098,7 @@ export default function FinalTables() {
 
     return (
       <tr key="servfulok-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const key = resolveDataKey(col);
@@ -1137,7 +1137,7 @@ export default function FinalTables() {
 
     return (
       <tr key="current-month-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const val = columnSums[i] || "0.00";
@@ -1169,7 +1169,7 @@ export default function FinalTables() {
 
     return (
       <tr key="sum-of-achievedKpiWithWeightage">
-        <td></td>
+        
 
         {colSums.map((colVal, i) => (
           <React.Fragment key={columns[i]}>
@@ -1199,7 +1199,7 @@ export default function FinalTables() {
 
     return (
       <tr key="12th-row-divided">
-        <td></td>
+        
 
         {colSums.map((val, i) => {
           let finalVal = "0.00%";
@@ -1749,8 +1749,19 @@ export default function FinalTables() {
           {/* LEFT: KPI Table */}
           <div className="kpi-table-container">
             {/* <h2 className="kpi-table-subtitle">Key Performance Indicators (KPI) Table</h2> */}
+            {/* rgm,pdgm,nw ee,rtom area header rows */}
             <table className="kpi-table">
               <thead>
+                <tr className="colSpan-header"> 
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px", backgroundColor: "#2b51baff", color: "white" }} >R-GM </th>                
+                  </tr>
+                <tr className="colSpan-header"> 
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px" , backgroundColor: "#2b51baff", color: "white"}} >P-DGM</th>
+                </tr>
+                <tr className="colSpan-header" >
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px", backgroundColor: "#2b51baff", color: "white"  }} >NW EE/RTOM AREA</th>
+                </tr>
+
                 <tr>
                   <th>#</th>
                   <th>Perspectives</th>
@@ -1760,6 +1771,7 @@ export default function FinalTables() {
                   <th>Description of KPI</th>
                   <th>Weightage</th>
                 </tr>
+                
               </thead>
               <tbody>
                 {kpiData.length ? (
@@ -1801,7 +1813,7 @@ export default function FinalTables() {
             <table className="final-distribution-table">
               <thead>
                 <tr style={{ height: "1px" }}>
-                  <th>R-GM</th>
+                 
                   {regionHierarchy.length
                     ? regionHierarchy.map((rg) => (
                         <th key={rg.name} colSpan={(rg.totalEngineers || 0) * 2}>
@@ -1813,7 +1825,7 @@ export default function FinalTables() {
                       )}
                 </tr>
                 <tr>
-                  <th>P-DGM</th>
+                  
                   {regionHierarchy.length
                     ? regionHierarchy.flatMap((rg) =>
                         rg.provinces.map((pv) => (
@@ -1825,7 +1837,7 @@ export default function FinalTables() {
                     : null}
                 </tr>
                 <tr>
-                  <th>NW EE / RTOM AREA</th>
+                  
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
@@ -1835,7 +1847,7 @@ export default function FinalTables() {
                 </tr>
 
                 <tr>
-                  <th> </th>
+                  
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
