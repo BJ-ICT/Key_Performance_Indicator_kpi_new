@@ -38,4 +38,11 @@ RegionTableSchema.index({ lea: 1 });
 // Create RegionTable model
 const RegionTable = mongoose.model("RegionTable", RegionTableSchema);
 
+//- duplicate prevention:
+// Entire row must be unique across these 4 fields
+RegionTableSchema.index(
+  { region: 1, province: 1, networkEngineer: 1, lea: 1 },
+  { unique: true }
+);
+
 export default RegionTable;

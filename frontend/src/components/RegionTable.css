@@ -1,404 +1,513 @@
 /* Region Table Styles */
 .region-table-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    padding-top: 120px; /* Add top padding to avoid navbar overlap */
-    font-family: "Arial", sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-top: 120px; /* Add top padding to avoid navbar overlap */
+  font-family: "Arial", sans-serif;
+}
+
+.region-table-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.region-table-header h1 {
+  color: #333;
+  font-size: 2.5em;
+  margin-bottom: 10px;
+}
+
+.region-table-header p {
+  color: #666;
+  font-size: 1.1em;
+}
+
+/* Form Section */
+.form-section {
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.form-header h2 {
+  color: #333;
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.move-lea-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.move-lea-btn:hover {
+  background-color: #218838;
+}
+
+.move-lea-btn:focus-visible {
+  outline: 2px solid #155724;
+  outline-offset: 2px;
+}
+
+.region-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input,
+.form-control {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-control:focus,
+.form-group input:focus-visible,
+.form-control:focus-visible {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.submit-btn,
+.cancel-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.submit-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #0056b3;
+}
+
+.submit-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #545b62;
+}
+
+.submit-btn:focus-visible,
+.cancel-btn:focus-visible {
+  outline: 2px solid #003e80;
+  outline-offset: 2px;
+}
+
+/* Messages */
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 15px 0;
+  border: 1px solid #f5c6cb;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 15px 0;
+  border: 1px solid #c3e6cb;
+}
+
+/* Table Section */
+.table-section {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.table-section h2 {
+  background: #f8f9fa;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1em;
+  color: #666;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  /* Optional sticky header support:
+     max-height: 60vh;
+     overflow: auto; */
+}
+
+.region-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+/* Optional sticky header:
+.region-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+} */
+
+.region-data-table th {
+  background-color: #007bff;
+  color: white;
+  padding: 15px 12px;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #0056b3;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.region-data-table th:hover {
+  background-color: #0056b3;
+}
+
+.region-data-table th:focus-visible {
+  outline: 2px solid #003e80;
+  outline-offset: 2px;
+}
+
+.region-data-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: top;
+}
+
+.region-data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.region-data-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.engineer-name {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.region-name {
+  font-weight: bold;
+  color: #28a745;
+}
+
+.province-name {
+  font-weight: bold;
+  color: #fd7e14;
+}
+
+.leas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lea-item {
+  line-height: 1.4;
+}
+
+.lea-name {
+  font-weight: bold;
+  color: #28a745;
+}
+
+.lea-details {
+  color: #666;
+  font-size: 12px;
+}
+
+.regions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.region-item {
+  color: #666;
+  font-size: 13px;
+}
+
+.no-data {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 40px !important;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Unified base for edit & delete buttons */
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+/* Icon sizing for both buttons */
+.edit-btn .icon,
+.delete-btn .icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Edit button hover/focus */
+.edit-btn:hover {
+  background-color: #e3f2fd;
+}
+.edit-btn:focus-visible {
+  outline: 2px solid #0056b3;
+  outline-offset: 2px;
+}
+
+/* Delete button color scheme */
+.delete-btn {
+  color: #dc3545; /* danger red */
+}
+.delete-btn:hover {
+  background-color: #ffebee;
+  color: #b02a37;
+}
+.delete-btn:active {
+  opacity: 0.8;
+}
+.delete-btn:focus-visible {
+  outline: 2px solid #b02a37;
+  outline-offset: 2px;
+}
+
+/* Editable Cell Styles */
+.editable-cell {
+  position: relative;
+}
+/* Make all data cells left-aligned and vertically centered */
+.region-data-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;      /* was top */
+  text-align: left;            /* ensure left by default */
+}
+
+/* Center only the Actions column */
+.actions-cell {
+  text-align: center;
+}
+
+/* Make editable cell layout consistent:
+   keep content left, push pencil to the far right */
+.view-mode {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;     /* was space-between */
+  gap: 0.5rem;
+}
+
+/* push the edit button to the right edge without changing text alignment */
+.view-mode .edit-btn {
+  margin-left: auto;               /* NEW */
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.view-mode:hover .edit-btn,
+.view-mode:focus-within .edit-btn {
+  opacity: 1;
+}
+
+
+.view-mode {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem; /* better spacing for pencil button */
+}
+
+.view-mode:hover {
+  background-color: #e3f2fd;
+}
+
+/* Back-compat for older markup that used .edit-icon span */
+.edit-icon {
+  opacity: 0;
+  font-size: 12px;
+  transition: opacity 0.2s ease;
+}
+.view-mode:hover .edit-icon {
+  opacity: 0.7;
+}
+
+/* Button-style edit affordance inside view-mode */
+.view-mode .edit-btn {
+  opacity: 0;
+}
+.view-mode:hover .edit-btn,
+.view-mode:focus-within .edit-btn {
+  opacity: 1;
+}
+
+.view-mode:focus-within {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12);
+  background-color: #eaf3ff;
+}
+
+.edit-mode {
+  width: 100%;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 2px solid #007bff;
+  border-radius: 3px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.edit-input:focus,
+.edit-input:focus-visible {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12);
+}
+
+/* Placeholder for empty values (used by component) */
+.placeholder {
+  opacity: 0.6;
+  font-style: italic;
+  color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .region-table-container {
+    padding: 15px;
   }
-  
-  .region-table-header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  
-  .region-table-header h1 {
-    color: #333;
-    font-size: 2.5em;
-    margin-bottom: 10px;
-  }
-  
-  .region-table-header p {
-    color: #666;
-    font-size: 1.1em;
-  }
-  
-  /* Form Section */
-  .form-section {
-    background: #f9f9f9;
-    padding: 25px;
-    border-radius: 8px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-  }
-  
-  .form-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .form-header h2 {
-    color: #333;
-    margin: 0;
-    font-size: 1.5em;
-  }
-  
-  .move-lea-btn {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-  }
-  
-  .move-lea-btn:hover {
-    background-color: #218838;
-  }
-  
-  .region-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
+
   .form-row {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
+    flex-direction: column;
   }
-  
+
   .form-group {
-    flex: 1;
-    min-width: 250px;
+    min-width: auto;
   }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #333;
-  }
-  
-  .form-group input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-  }
-  
-  .form-group input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-  }
-  
+
   .form-buttons {
-    display: flex;
-    gap: 15px;
-    margin-top: 10px;
+    flex-direction: column;
   }
-  
+
   .submit-btn,
   .cancel-btn {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  }
-  
-  .submit-btn {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .submit-btn:hover {
-    background-color: #0056b3;
-  }
-  
-  .submit-btn:disabled {
-    background-color: #6c757d;
-    cursor: not-allowed;
-  }
-  
-  .cancel-btn {
-    background-color: #6c757d;
-    color: white;
-  }
-  
-  .cancel-btn:hover {
-    background-color: #545b62;
-  }
-  
-  /* Messages */
-  .error-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 12px;
-    border-radius: 4px;
-    margin: 15px 0;
-    border: 1px solid #f5c6cb;
-  }
-  
-  .success-message {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 12px;
-    border-radius: 4px;
-    margin: 15px 0;
-    border: 1px solid #c3e6cb;
-  }
-  
-  /* Table Section */
-  .table-section {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
   }
-  
-  .table-section h2 {
-    background: #f8f9fa;
-    margin: 0;
-    padding: 20px;
-    color: #333;
-    border-bottom: 1px solid #dee2e6;
-  }
-  
-  .loading {
-    text-align: center;
-    padding: 40px;
-    font-size: 1.1em;
-    color: #666;
-  }
-  
-  .table-wrapper {
-    overflow-x: auto;
-  }
-  
+
   .region-data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
+    font-size: 12px;
   }
-  
-  .region-data-table th {
-    background-color: #007bff;
-    color: white;
-    padding: 15px 12px;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 2px solid #0056b3;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .region-data-table th:hover {
-    background-color: #0056b3;
-  }
-  
+
+  .region-data-table th,
   .region-data-table td {
-    padding: 12px;
-    border-bottom: 1px solid #dee2e6;
-    vertical-align: top;
+    padding: 8px 6px;
   }
-  
-  .region-data-table tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-  
-  .region-data-table tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .engineer-name {
-    font-weight: bold;
-    color: #007bff;
-  }
-  
-  .region-name {
-    font-weight: bold;
-    color: #28a745;
-  }
-  
-  .province-name {
-    font-weight: bold;
-    color: #fd7e14;
-  }
-  
-  .leas-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .lea-item {
-    line-height: 1.4;
-  }
-  
-  .lea-name {
-    font-weight: bold;
-    color: #28a745;
-  }
-  
-  .lea-details {
-    color: #666;
-    font-size: 12px;
-  }
-  
-  .regions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .region-item {
-    color: #666;
-    font-size: 13px;
-  }
-  
-  .form-control {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-  }
-  
-  .form-control:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-  }
-  
-  .no-data {
-    text-align: center;
-    color: #666;
-    font-style: italic;
-    padding: 40px !important;
-  }
-  
-  /* Action Buttons */
+
   .action-buttons {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
   }
-  
-  .edit-btn,
-  .delete-btn {
-    background: none;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
+}
+
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
   }
-  
-  .edit-btn:hover {
-    background-color: #e3f2fd;
-  }
-  
-  .delete-btn:hover {
-    background-color: #ffebee;
-  }
-  
-  /* Editable Cell Styles */
-  .editable-cell {
-    position: relative;
-  }
-  
-  .view-mode {
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .view-mode:hover {
-    background-color: #e3f2fd;
-  }
-  
-  .edit-icon {
-    opacity: 0;
-    font-size: 12px;
-    transition: opacity 0.2s ease;
-  }
-  
-  .view-mode:hover .edit-icon {
-    opacity: 0.7;
-  }
-  
-  .edit-mode {
-    width: 100%;
-  }
-  
-  .edit-input {
-    width: 100%;
-    padding: 6px 8px;
-    border: 2px solid #007bff;
-    border-radius: 3px;
-    font-size: 14px;
-    background-color: white;
-  }
-  
-  .edit-input:focus {
-    outline: none;
-    border-color: #0056b3;
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .region-table-container {
-      padding: 15px;
-    }
-  
-    .form-row {
-      flex-direction: column;
-    }
-  
-    .form-group {
-      min-width: auto;
-    }
-  
-    .form-buttons {
-      flex-direction: column;
-    }
-  
-    .submit-btn,
-    .cancel-btn {
-      width: 100%;
-    }
-  
-    .region-data-table {
-      font-size: 12px;
-    }
-  
-    .region-data-table th,
-    .region-data-table td {
-      padding: 8px 6px;
-    }
-  
-    .action-buttons {
-      flex-direction: column;
-      gap: 4px;
-    }
-  }
-  
+}

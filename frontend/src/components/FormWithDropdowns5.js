@@ -97,11 +97,16 @@ const Form6Table = () => {
   }, []);
 
   const calculatePercentage = (totalMinutes, unavailableMinutes, totalNodes) => {
-    const totalAvailableMinutes = totalMinutes - unavailableMinutes;
-    const totalMin = 24 * 60 * daysInMonth * totalNodes;
+    const minutes = Number(totalMinutes) || 0;
+    const unavailable = Number(unavailableMinutes) || 0;
+    const nodes = Number(totalNodes) || 0;
+    const totalAvailableMinutes = minutes - unavailable;
+    const totalMin = 24 * 60 * daysInMonth * nodes;
 
-    if (totalMin === 0) return 100; // Avoid division by zero
-    return (100 * totalAvailableMinutes) / totalMin;
+    if (totalMin <= 0) return 100; // Avoid division by zero or invalid denominator
+    const raw = (100 * totalAvailableMinutes) / totalMin;
+    const bounded = Math.max(0, Math.min(100, raw));
+    return bounded;
   };
 
   const handleEditClick = (rowId, key, value) => {
@@ -120,13 +125,28 @@ const Form6Table = () => {
     if (editCell.rowId !== null) {
       const updatedData = data.map((entry) => {
         if (entry._id === editCell.rowId) {
-          return {
+          const [parentKey, childKey] = editCell.key.split('.');
+          const newValue = editCell.value;
+
+          const updatedEntry = {
             ...entry,
-            [editCell.key.split('.')[0]]: {
-              ...entry[editCell.key.split('.')[0]],
-              [editCell.key.split('.')[1]]: editCell.value,
+            [parentKey]: {
+              ...entry[parentKey],
+              [childKey]: newValue,
             },
           };
+
+          // If total_nodes was edited, also update corresponding total_minutes
+          if (parentKey === 'total_nodes') {
+            const nodes = Number(newValue) || 0;
+            const computedTotalMinutes = 24 * 60 * daysInMonth * nodes;
+            updatedEntry.total_minutes = {
+              ...entry.total_minutes,
+              [childKey]: computedTotalMinutes,
+            };
+          }
+
+          return updatedEntry;
         }
         return entry;
       });
@@ -418,10 +438,13 @@ const Form6Table = () => {
             const dataRow = ['', '', '', '', label];
 
             allAreas.forEach(area => {
+                const nodesVal = entry.total_nodes?.[area] || 0;
+                const computedTotalMinutes = 24 * 60 * daysInMonth * nodesVal;
+                const manualTotalMinutes = entry.total_minutes?.[area];
                 const value =
-                    index === 0 ? entry.unavailable_minutes?.[area] || 0 :
-                    index === 1 ? entry.total_minutes?.[area] || 0 :
-                    entry.total_nodes?.[area] || 0;
+                    index === 0 ? (entry.unavailable_minutes?.[area] || 0) :
+                    index === 1 ? (manualTotalMinutes && Number(manualTotalMinutes) !== 0 ? manualTotalMinutes : computedTotalMinutes) :
+                    (nodesVal || 0);
 
                 dataRow.push(value);
             });
@@ -642,7 +665,13 @@ const Form6Table = () => {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                          {entry.total_minutes[key]}
+                          {(() => {
+                            const manual = entry.total_minutes[key];
+                            const nodes = Number(entry.total_nodes?.[key]) || 0;
+                            const computed = 24 * 60 * daysInMonth * nodes;
+                            // Preserve manual non-zero entries; otherwise show computed per-month minutes
+                            return (manual && Number(manual) !== 0) ? manual : computed;
+                          })()}
                           {role == "puser" && isEditingAllowed && (
                         <button className="table-button" onClick={() => handleEditClick(entry._id, `total_minutes.${key}`, entry.total_minutes[key])} style={{
                       

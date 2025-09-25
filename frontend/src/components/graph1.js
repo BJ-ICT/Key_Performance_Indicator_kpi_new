@@ -1118,19 +1118,19 @@ const render12thRowDividedByKpiWeightageAsArray = () => {
                       border: '1px solid #ccc',
                     }}
                   >
- <div style={{ width: '120px', height: '120px' }}> {/* Adjust width and height as needed */}
-  <CircularProgressbar
-    value={row12Data[columns.indexOf(meter)]}
-    maxValue={100}
-    text={`${row12Data[columns.indexOf(meter)]}%`}
-    styles={buildStyles({
-      pathColor: `rgba(62, 152, 199, ${row12Data[columns.indexOf(meter)] / 100})`,
-      textColor: '#000',
-      trailColor: '#d6d6d6',
-      backgroundColor: '#f3f3f3',
-    })}
-  />
-</div>
+                  <div style={{ width: '120px', height: '120px' }}> {/* Adjust width and height as needed */}
+                    <CircularProgressbar
+                      value={row12Data[columns.indexOf(meter)]}
+                      maxValue={100}
+                      text={`${row12Data[columns.indexOf(meter)]}%`}
+                      styles={buildStyles({
+                        pathColor: `rgba(62, 152, 199, ${row12Data[columns.indexOf(meter)] / 100})`,
+                        textColor: '#000',
+                        trailColor: '#d6d6d6',
+                        backgroundColor: '#f3f3f3',
+                      })}
+                    />
+                  </div>
                   </div>
 
                   {/* Back Side */}
@@ -1175,4 +1175,3 @@ const render12thRowDividedByKpiWeightageAsArray = () => {
 }
 
 // ==================== End of FinalTables.js ====================
-

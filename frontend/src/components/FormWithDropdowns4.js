@@ -123,13 +123,28 @@ const Form6Table = () => {
     if (editCell.rowId !== null) {
       const updatedData = data.map((entry) => {
         if (entry._id === editCell.rowId) {
-          return {
+          const [parentKey, childKey] = editCell.key.split('.');
+          const newValue = editCell.value;
+
+          const updatedEntry = {
             ...entry,
-            [editCell.key.split('.')[0]]: {
-              ...entry[editCell.key.split('.')[0]],
-              [editCell.key.split('.')[1]]: editCell.value,
+            [parentKey]: {
+              ...entry[parentKey],
+              [childKey]: newValue,
             },
           };
+
+          // If total_nodes was edited, also update corresponding total_minutes
+          if (parentKey === 'total_nodes') {
+            const nodes = Number(newValue) || 0;
+            const computedTotalMinutes = 24 * 60 * daysInMonth * nodes;
+            updatedEntry.total_minutes = {
+              ...entry.total_minutes,
+              [childKey]: computedTotalMinutes,
+            };
+          }
+
+          return updatedEntry;
         }
         return entry;
       });

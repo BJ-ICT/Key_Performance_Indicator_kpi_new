@@ -129,7 +129,9 @@ const MaintenanceTable = () => {
                 return acc + (prevMonthData ? parseFloat(prevMonthData.Column3) || 0 : 0);
               }, 0);
 
-              const percentage = ((totalAchievement + prevAchievements) / columnSums[header]) * 100;
+              const denom = Number(columnSums[header]) || 0;
+              const raw = denom > 0 ? ((totalAchievement + prevAchievements) / denom) * 100 : 100;
+              const percentage = Math.max(0, Math.min(100, raw));
               row[header] = `${percentage.toFixed(2)}%`;
             } else {
               row[header] = '0%';
@@ -153,7 +155,9 @@ const MaintenanceTable = () => {
                 return acc + (prevMonthData ? parseFloat(prevMonthData.Column3) || 0 : 0);
               }, 0);
 
-              const percentage = ((totalAchievement + prevAchievements) / columnSums[header]) * 100;
+              const denom = Number(columnSums[header]) || 0;
+              const raw = denom > 0 ? ((totalAchievement + prevAchievements) / denom) * 100 : 100;
+              const percentage = Math.max(0, Math.min(100, raw));
               acc[header] = `${percentage.toFixed(2)}%`;
             } else {
               acc[header] = '0%';
@@ -222,7 +226,9 @@ const MaintenanceTable = () => {
                                 const prevMonthData = data[currentIndex - offset]?.details.find((item) => item.Column1 === header);
                                 return acc + (prevMonthData ? parseFloat(prevMonthData.Column3) || 0 : 0);
                               }, 0);
-                              const percentage = ((totalAchievement + prevAchievements) / columnSums[header]) * 100;
+                              const denom = Number(columnSums[header]) || 0;
+                              const raw = denom > 0 ? ((totalAchievement + prevAchievements) / denom) * 100 : 100;
+                              const percentage = Math.max(0, Math.min(100, raw));
                               return `${percentage.toFixed(2)}%`;
                             })()
                           : '0%')}

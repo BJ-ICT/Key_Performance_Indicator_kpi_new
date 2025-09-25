@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import "./RegionTable.css";
+import { FiTrash2, FiEdit2 } from "react-icons/fi";
 
 const RegionTable = () => {
   const [formData, setFormData] = useState({
@@ -215,7 +216,7 @@ const RegionTable = () => {
 
   // Function to handle inline editing for Network Engineer and LEA only
   const handleInlineEdit = async (id, field, value) => {
-    if (field !== "networkEngineer" && field !== "lea") {
+    if (field !== "networkEngineer" && field !== "lea" && field !== "region" && field !== "province") {
       return; // Only allow editing of Network Engineer and LEA
     }
 
@@ -224,11 +225,13 @@ const RegionTable = () => {
         [field]: value,
       });
       fetchRegionData();
-      setSuccess(
-        `${
-          field === "networkEngineer" ? "Network Engineer" : "LEA"
-        } updated successfully`
-      );
+      const labelMap = {
+        networkEngineer: "Network Engineer",
+        lea: "LEA",
+        region: "Region",
+        province: "Province",
+      };
+      setSuccess(`${labelMap[field] || field} updated successfully`);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update field");
     }
@@ -238,7 +241,7 @@ const RegionTable = () => {
     <div className="region-table-container">
       <div className="region-table-header">
         <h1>Region Management</h1>
-        <p>Manage Region, Province, Network Engineer and LEA information</p>
+        <p>Manage Region, Province, Network Engineer and LEA information </p>
       </div>
 
       {/* Form Section */}
@@ -250,6 +253,7 @@ const RegionTable = () => {
             onClick={() => setShowMoveForm(true)}
             className="move-lea-btn"
             title="Move LEA to different Network Engineer"
+            
           >
             📦 Move LEA
           </button>
@@ -464,25 +468,52 @@ const RegionTable = () => {
                 ) : (
                   sortedData.map((item) => (
                     <tr key={item._id}>
+                      {/* Region editable */}
                       <td className="region-name">
-                        <strong>{item.region}</strong>
+                        <EditableCell
+                          value={item.region ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "region", val)
+                          }
+                        />
                       </td>
+                      {/* Province editable */}
                       <td className="province-name">
-                        <strong>{item.province}</strong>
+                        <EditableCell
+                          value={item.province ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "province", val)
+                          }
+                        />
                       </td>
+
+                      {/* Inline editable cells for Network Engineer and LEA */}
                       <td className="engineer-name">
-                        <strong>{item.networkEngineer}</strong>
+                        <EditableCell
+                          value={item.networkEngineer ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "networkEngineer", val)
+                          }
+                        />
                       </td>
                       <td className="lea-name">
-                        <strong>{item.lea}</strong>
+                        <EditableCell
+                          value={item.lea ?? ""}
+                          onSave={(val) =>
+                            handleInlineEdit(item._id, "lea", val)
+                          }
+                        />
                       </td>
-                      <td style={{ textAlign: "center" }}>
+
+                      <td className="actions-cell">
                         <button
+                          type="button"
                           onClick={() => handleDelete(item._id)}
                           className="delete-btn"
                           title="Delete this region data entry"
+                          aria-label="Delete"
                         >
-                          🗑️
+                          <FiTrash2 className="icon" />
                         </button>
                       </td>
                     </tr>
@@ -521,33 +552,75 @@ const EditableCell = ({ value, onSave }) => {
       handleCancel();
     }
   };
-
+      ///
+      //  return (
+      //     <div className="editable-cell">
+      //       {isEditing ? (
+      //         <div className="edit-mode">
+      //           <input
+      //             type="text"
+      //             value={editValue}
+      //             onChange={(e) => setEditValue(e.target.value)}
+      //             onKeyDown={handleKeyPress}
+      //             onBlur={handleSave}
+      //             autoFocus
+      //             className="edit-input"
+      //           />
+      //         </div>
+      //       ) : (
+      //         <div
+      //           className="view-mode"
+      //           onClick={() => setIsEditing(true)}
+      //           title="Click to edit"
+      //         >
+      //           {value}
+      //           <span className="edit-icon">✏️ Edit</span>
+      //         </div>
+      //       )}
+      //     </div>
+      //   );  
   return (
-    <div className="editable-cell">
-      {isEditing ? (
-        <div className="edit-mode">
-          <input
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            onBlur={handleSave}
-            autoFocus
-            className="edit-input"
-          />
-        </div>
-      ) : (
-        <div
-          className="view-mode"
-          onClick={() => setIsEditing(true)}
-          title="Click to edit"
+  <div className="editable-cell">
+    {isEditing ? (
+      <div className="edit-mode">
+        <input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyPress}
+          onBlur={handleSave}
+          autoFocus
+          className="edit-input"
+          aria-label="Editing cell"
+        />
+      </div>
+    ) : (
+      <div
+        className="view-mode"
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsEditing(true)}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setIsEditing(true)}
+        title="Click to edit"
+        aria-label="Edit cell"
+      >
+        {value || <span className="placeholder">—</span>}
+        <button
+          type="button"
+          className="edit-btn"
+          aria-label="Edit"
+          onClick={(e) => {
+            e.stopPropagation(); // don't bubble to parent
+            setIsEditing(true);
+          }}
         >
-          {value}
-          <span className="edit-icon">✏️</span>
-        </div>
-      )}
-    </div>
-  );
+          <FiEdit2 className="icon" />
+        </button>
+      </div>
+    )}
+  </div>
+);
+
 };
 
 

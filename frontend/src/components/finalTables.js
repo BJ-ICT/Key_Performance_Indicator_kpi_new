@@ -1,9 +1,9 @@
-// excel ek dala .wde goda
 // src/components/FinalTables.js
 
 import axios from "axios";
+import { FiTrash2 } from "react-icons/fi";
 import React, { useEffect, useRef, useState } from "react";
-import ReactSpeedometer from "react-d3-speedometer"; // Single Speedometer import
+import ReactSpeedometer from "react-d3-speedometer";
 import "./finalTables.css";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -12,8 +12,9 @@ import { saveAs } from "file-saver";
 import ProtectedComponent from "./ProtectedComponent ";
 import ExcelJS from "exceljs";
 
-// Columns for Platform Distribution & Achievements
-const columns = [
+/* ------------------ Constants ------------------ */
+
+const defaultColumns = [
   "NW/WPC-1(CEN/HK/MD)",
   "NW/WPC-2 (CEN/HK/MD)",
   "NW/WPNE",
@@ -36,7 +37,6 @@ const columns = [
   "NW/NP-2",
 ];
 
-// Mapping column names => DB keys
 const columnToKeyMap = {
   "NW/WPC": "cenhkmd",
   "NW/WPNE": "gqkintb",
@@ -59,7 +59,6 @@ const columnToKeyMap = {
   "NW/NP-2": "komltmbva",
 };
 
-// Mapping for ServFulOk keys => final keys
 const servFulOkMap = {
   CENHKMD: "cenhkmd",
   CENHKMD1: "cenhkmd1",
@@ -83,23 +82,33 @@ const servFulOkMap = {
   KOMLTMBVA: "komltmbva",
 };
 
-// Multipliers for ServFulOk rows
 const servFulOkRowMultipliers = [0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.05, 0.05];
 
-// Helper to parse "12.34%" => 12.34
-function parsePct(str) {
-  if (!str) return 0;
-  return parseFloat(String(str).replace("%", "")) || 0;
-}
+/* ------------------ Helpers ------------------ */
 
-// Utility Functions
+const getBaseCodeFromLabel = (label) => {
+  if (!label) return "";
+  const s = String(label).trim();
+  const m = s.match(/^(NW\/[A-Z0-9]+(?:-[0-9]+)?)/);
+  return m ? m[1] : s;
+};
+
+const resolveDataKey = (label) => {
+  const base = getBaseCodeFromLabel(label);
+  return columnToKeyMap[base];
+};
+
+const getCanonicalDisplayForLookup = (label) => {
+  const base = getBaseCodeFromLabel(label);
+  for (let i = 0; i < defaultColumns.length; i++) {
+    if (getBaseCodeFromLabel(defaultColumns[i]) === base) return defaultColumns[i];
+  }
+  return label;
+};
+
 const calcPct = (tm, um, tn) => {
   if (!tm && !um && !tn) return 100;
-  const days = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    0
-  ).getDate();
+  const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
   const total = 24 * 60 * days * tn;
   const avail = tm - um;
   return total ? (100 * avail) / total : 0;
@@ -123,14 +132,13 @@ const calcTotals = (data, mult) => {
   return t;
 };
 
-const computePercentages = (f, s) => {
+const computePercentages = (f, s, cols) => {
   const p = {};
-  columns.forEach((col) => {
+  (cols || defaultColumns).forEach((col) => {
     const k = columnToKeyMap[col],
       fv = parseFloat(f?.[k]) || 0,
       sv = parseFloat(s?.[k]) || 0;
 
-    // If both values are 0, set percentage to 100
     if (fv === 0 && sv === 0) {
       p[col] = "100.00";
     } else {
@@ -146,6 +154,9 @@ export default function FinalTables() {
   const [f6, setF6] = useState([]),
     [f7, setF7] = useState([]),
     [f8, setF8] = useState([]);
+  // Dynamic columns built from Region→Province→Engineer hierarchy
+  const [columns, setColumns] = useState(defaultColumns);
+  const [regionHierarchy, setRegionHierarchy] = useState([]); // [{ name, provinces:[{ name, engineers:["..."], totalEngineers }], totalEngineers }]
   const [subs, setSubs] = useState({});
   const [servFulOkRow, setServFulOkRow] = useState({});
   const [kpiRes, setKpiRes] = useState([]),
@@ -199,14 +210,109 @@ export default function FinalTables() {
    * }
    */
   const columnsAchievedRef = useRef({
-    row1: Array(columns.length).fill(0),
-    row2: Array(columns.length).fill(0),
-    row3: Array(columns.length).fill(0),
-    row5: Array(columns.length).fill(0),
-    row6: Array(columns.length).fill(0),
-    row7: Array(columns.length).fill(0),
-    row10: Array(columns.length).fill(0),
+    row1: Array((columns || []).length).fill(0),
+    row2: Array((columns || []).length).fill(0),
+    row3: Array((columns || []).length).fill(0),
+    row5: Array((columns || []).length).fill(0),
+    row6: Array((columns || []).length).fill(0),
+    row7: Array((columns || []).length).fill(0),
+    row10: Array((columns || []).length).fill(0),
   });
+
+  // Reinitialize columnsAchievedRef arrays if columns change
+  useEffect(() => {
+    const len = (columns || []).length;
+    columnsAchievedRef.current = {
+      row1: Array(len).fill(0),
+      row2: Array(len).fill(0),
+      row3: Array(len).fill(0),
+      row5: Array(len).fill(0),
+      row6: Array(len).fill(0),
+      row7: Array(len).fill(0),
+      row10: Array(len).fill(0),
+    };
+  }, [columns]);
+
+  // ============= Fetch Region Table => Build hierarchy and dynamic columns =============
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get("/api/region-table");
+        let rows = res?.data?.data || [];
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        // Preserve stable order by oldest-first (createdAt ascending) if available
+        rows = rows.slice().sort((a, b) => {
+          const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return da - db;
+        });
+
+        // Group: Region → Province → Engineers; preserve insertion order
+        const regionMap = new Map();
+        rows.forEach((r) => {
+          const region = (r.region || "").trim();
+          const province = (r.province || "").trim();
+          const engineer = (r.networkEngineer || "").trim();
+          if (!region || !province || !engineer) return;
+
+          if (!regionMap.has(region)) regionMap.set(region, new Map());
+          const provMap = regionMap.get(region);
+          if (!provMap.has(province)) provMap.set(province, new Set());
+          const engSet = provMap.get(province);
+          engSet.add(engineer);
+        });
+
+        const hierarchy = [];
+        const flatEngineers = [];
+        regionMap.forEach((provMap, regionName) => {
+          const provinces = [];
+          let regionEngineerCount = 0;
+          provMap.forEach((engSet, provName) => {
+            const engineers = Array.from(engSet);
+            engineers.forEach((e) => flatEngineers.push(e));
+            provinces.push({ name: provName, engineers, totalEngineers: engineers.length });
+            regionEngineerCount += engineers.length;
+          });
+          hierarchy.push({ name: regionName, provinces, totalEngineers: regionEngineerCount });
+        });
+
+        // Build columns by base code. Keep default base order, override display with Region labels.
+        const baseOrder = defaultColumns.map((d) => getBaseCodeFromLabel(d));
+        const baseToDisplay = new Map();
+        // seed with defaults
+        defaultColumns.forEach((d) => {
+          baseToDisplay.set(getBaseCodeFromLabel(d), d);
+        });
+        // override with region labels for same base
+        flatEngineers.forEach((label) => {
+          const base = getBaseCodeFromLabel(label);
+          if (baseToDisplay.has(base)) {
+            baseToDisplay.set(base, label);
+          }
+        });
+        // collect any truly new bases (not in defaults) to append
+        const appended = [];
+        flatEngineers.forEach((label) => {
+          const base = getBaseCodeFromLabel(label);
+          if (!baseToDisplay.has(base) && !appended.find((x) => getBaseCodeFromLabel(x) === base)) {
+            appended.push(label);
+          }
+        });
+        const dynamicCols = [
+          ...baseOrder.map((b) => baseToDisplay.get(b)).filter(Boolean),
+          ...appended,
+        ];
+
+        // Fallback to defaults if intersection is empty
+        setColumns(dynamicCols.length ? dynamicCols : defaultColumns);
+        setRegionHierarchy(hierarchy);
+      } catch (e) {
+        console.error("Error fetching Region Table:", e);
+        // Keep defaults if API fails
+      }
+    })();
+  }, []);
 
   // ============= Fetching form6, form7, form8 => subTotals =============
   useEffect(() => {
@@ -349,7 +455,8 @@ export default function FinalTables() {
             kpiPercent: kpi_percent,
             percentages: computePercentages(
               Total_Failed_Links,
-              Links_SLA_Not_Violated
+              Links_SLA_Not_Violated,
+              columns
             ),
           });
         }
@@ -361,7 +468,8 @@ export default function FinalTables() {
             kpiPercent: kpi_percent,
             percentages: computePercentages(
               Total_Failed_Links,
-              Links_SLA_Not_Violated
+              Links_SLA_Not_Violated,
+              columns
             ),
           });
         }
@@ -567,7 +675,8 @@ export default function FinalTables() {
           headerMap[h] = i;
         });
         const finalSums = columns.map((col) => {
-          const idx = headerMap[col];
+          const display = getCanonicalDisplayForLookup(col);
+          const idx = headerMap[display];
           return typeof idx === "number" && idx >= 0 ? finalSum[idx] : "0.00";
         });
 
@@ -596,12 +705,13 @@ export default function FinalTables() {
           columns.forEach((col) => {
             let totalAch = 0,
               totalDist = 0;
+            const display = getCanonicalDisplayForLookup(col);
             months.forEach((mnth) => {
               const found = data.find((e) => e.month === mnth);
               if (found && found.details) {
                 try {
                   const arr = found.details;
-                  const cItem = arr.find((x) => x.Column1 === col);
+                  const cItem = arr.find((x) => x.Column1 === display);
                   if (cItem) {
                     totalAch += parseFloat(cItem.Column3) || 0;
                     totalDist += parseFloat(cItem.Column2) || 0;
@@ -639,9 +749,10 @@ export default function FinalTables() {
         // Compute final averagePlaceholder
         const averagePl = {};
         columns.forEach((col) => {
-          const mVal = parseFloat(msanPl[col]) || 0;
-          const vVal = parseFloat(vpnPl[col]) || 0;
-          const sVal = parseFloat(slbnPl[col]) || 0;
+          const display = getCanonicalDisplayForLookup(col);
+          const mVal = parseFloat(msanPl[display]) || 0;
+          const vVal = parseFloat(vpnPl[display]) || 0;
+          const sVal = parseFloat(slbnPl[display]) || 0;
 
           // If all three are zero, default to "100.00"
           if (mVal === 0 && vVal === 0 && sVal === 0) {
@@ -851,7 +962,8 @@ export default function FinalTables() {
 
     // Compute per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const val = kpiItem.percentages[col] || "0.00";
+      const display = getCanonicalDisplayForLookup(col);
+      const val = kpiItem.percentages[display] || "0.00";
       return rAchievedW(val, threshold, wg);
     });
 
@@ -863,10 +975,11 @@ export default function FinalTables() {
 
     return (
       <tr key={kpiItem.kpiName}>
-        <td></td>
+        
 
         {columns.map((col, i) => {
-          const val = kpiItem.percentages[col] || "0.00";
+          const display = getCanonicalDisplayForLookup(col);
+          const val = kpiItem.percentages[display] || "0.00";
           return (
             <React.Fragment key={col}>
               <td>{rAchieved(val, threshold)}</td>
@@ -889,7 +1002,7 @@ export default function FinalTables() {
 
     // Per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const k = columnToKeyMap[col];
+      const k = resolveDataKey(col);
       const val = (subs[k] || 0).toFixed(2);
       return rFinalDataRowWithWeightage(val);
     });
@@ -902,10 +1015,10 @@ export default function FinalTables() {
 
     return (
       <tr key="final-data-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
-          const k = columnToKeyMap[col];
+          const k = resolveDataKey(col);
           const numericVal = subs[k] || 0;
           const strVal = numericVal.toFixed(2);
           return (
@@ -930,7 +1043,8 @@ export default function FinalTables() {
 
     // Per-column "Achieved KPI with Weightage"
     const colArr = columns.map((col) => {
-      const val = averagePlaceholder[col] || "0.00";
+      const display = getCanonicalDisplayForLookup(col);
+      const val = averagePlaceholder[display] || "0.00";
       return rCurrentMonthWithWeightage(parseFloat(val) || 0);
     });
 
@@ -942,10 +1056,11 @@ export default function FinalTables() {
 
     return (
       <tr key="average-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
-          const val = averagePlaceholder[col] || "0.00";
+          const display = getCanonicalDisplayForLookup(col);
+          const val = averagePlaceholder[display] || "0.00";
           return (
             <React.Fragment key={col}>
               <td>{val + "%"}</td>
@@ -970,7 +1085,7 @@ export default function FinalTables() {
 
     // Per-column
     const colArr = columns.map((col) => {
-      const key = columnToKeyMap[col];
+      const key = resolveDataKey(col);
       const val = servFulOkRow[key] ? parseFloat(servFulOkRow[key]) || 0 : 0;
       return rServFulOkWithWeightage(val);
     });
@@ -983,10 +1098,10 @@ export default function FinalTables() {
 
     return (
       <tr key="servfulok-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
-          const key = columnToKeyMap[col];
+          const key = resolveDataKey(col);
           const rawVal = servFulOkRow[key]
             ? parseFloat(servFulOkRow[key]) || 0
             : 0;
@@ -1022,7 +1137,7 @@ export default function FinalTables() {
 
     return (
       <tr key="current-month-row">
-        <td></td>
+        
 
         {columns.map((col, i) => {
           const val = columnSums[i] || "0.00";
@@ -1054,7 +1169,7 @@ export default function FinalTables() {
 
     return (
       <tr key="sum-of-achievedKpiWithWeightage">
-        <td></td>
+        
 
         {colSums.map((colVal, i) => (
           <React.Fragment key={columns[i]}>
@@ -1084,7 +1199,7 @@ export default function FinalTables() {
 
     return (
       <tr key="12th-row-divided">
-        <td></td>
+        
 
         {colSums.map((val, i) => {
           let finalVal = "0.00%";
@@ -1158,9 +1273,25 @@ export default function FinalTables() {
       }
       return "0.00";
     });
+
     setRow12Data(finalValues);
     console.log("Row12 Data for Speedometers:", finalValues);
-  }, [achievedKpiWithWeightage, totalWeight]);
+
+    // ALSO PUBLISH FOR DASHBOARD FALLBACK
+    try {
+      const columnsList = columns.slice(); // current meter order
+      const valuesByMeter = {};
+      columnsList.forEach((m, i) => { valuesByMeter[m] = parseFloat(finalValues[i]) || 0; });
+      window.localStorage.setItem(
+        "row12Payload",
+        JSON.stringify({ columns: columnsList, values: finalValues, valuesByMeter })
+      );
+    } catch (e) {
+      // ignore if SSR or storage quota
+    }
+  }, [achievedKpiWithWeightage, totalWeight, columns]);
+
+
 
   /////////////////////////////////////////////////
 
@@ -1239,60 +1370,7 @@ export default function FinalTables() {
     return ["12th Row Divided", "Div1", "Div2", "Div3", "Div4", "Div5", "Div6"];
   };
 
-  // const exportToExcel = () => {
-  //   // Create a new workbook
-  //   const workbook = XLSX.utils.book_new();
-
-  //   // Prepare data for KPI Table
-  //   const kpiTableData = [
-  //     ["#", "Perspectives", "Strategic Objectives (KRA)", "Key Performance Indicators (KPI)", "Unit", "Description of KPI", "Weightage"],
-  //     ...kpiData.map((row) => [
-  //       row.rowNumber || "-",
-  //       row.perspectives || "-",
-  //       row.strategicObjectives || "-",
-  //       row.keyPerformanceIndicators || "-",
-  //       row.unit || "-",
-  //       row.descriptionOfKPI || "-",
-  //       `${row.weightage || "-"}%`,
-  //     ]),
-  //   ];
-
-  //   // Add KPI Table to the workbook
-  //   const kpiSheet = XLSX.utils.aoa_to_sheet(kpiTableData);
-  //   XLSX.utils.book_append_sheet(workbook, kpiSheet, "KPI Table");
-
-  //   // Prepare data for Final Distribution Table
-  //   const finalTableHeader = [
-  //     ["R-GM", "Metro", "Metro", "Region 1", "Region 1", "Region 2", "Region 2", "Region 3"],
-  //     ["P-DGM", "Metro 1", "Metro 2", "WPN & NWP", "CP & NCP", "SAB & UVA", "WPS & SP", "EP"],
-  //     ["NW EE", "E/Fiber NW/WPC", ...columns.flatMap((col) => [col, col])],
-  //     ["RTOM AREA", "Achieved KPI", "Achieved KPI with Weightage", ...columns.flatMap(() => ["Achieved KPI", "Achieved KPI with Weightage"])],
-  //   ];
-
-  //   const finalTableData = [
-  //     ...finalTableHeader,
-  //     // Add dynamic rows here based on your frontend rendering logic
-  //     ...kpiRes.map((res, index) => renderKpiRowAsArray(res, index + 1)), // Ensure `renderKpiRowAsArray` converts your row data to an array
-  //     [], // Empty rows for spacing
-  //     renderFinalDataRowAsArray(),
-  //     renderAverageRowAsArray(),
-  //     renderServFulOkRowAsArray(),
-  //     renderCurrentMonthRowAsArray(),
-  //     renderSumOfAchievedKpiWithWeightageRowAsArray(),
-  //     render12thRowDividedByKpiWeightageAsArray(),
-  //   ];
-
-  //   // Add Final Distribution Table to the workbook
-  //   const finalTableSheet = XLSX.utils.aoa_to_sheet(finalTableData);
-  //   XLSX.utils.book_append_sheet(workbook, finalTableSheet, "Final Distribution Table");
-
-  //   // Save the workbook
-  //   const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  //   const data = new Blob([excelBuffer], { type: "application/octet-stream" });
-  //   saveAs(data, "Maintenance_Tables.xlsx");
-  // };
-
-  // Helper function to clean percentage values
+  
   // Helper function to clean percentage values
   const cleanPercentageValue = (value) => {
     if (!value) return "-";
@@ -1302,315 +1380,351 @@ export default function FinalTables() {
 
 
 
-  const exportToExcel = () => {
-    // Create a new workbook
-    const workbook = new ExcelJS.Workbook();
+  const exportToExcel = async () => {
+  // ---- safety guards
+  if (!kpiData?.length || !columns?.length) {
+    alert("No data to export yet.");
+    return;
+  }
 
-    // Prepare static KPI Table data
-    const kpiTableHeader = [
-      [
-        "#",
-        "Perspectives",
-        "Strategic Objectives (KRA)",
-        "Key Performance Indicators (KPI)",
-        "Unit",
-        "Description of KPI",
-        "Weightage",
-      ],
-    ];
-    const kpiTableRows = [
-      ...kpiData
-        .filter((row) => ![4, 8, 9].includes(row.rowNumber || row.no))
-        .map((row) => [
-        row.rowNumber || "-",
-        row.perspectives || "-",
-        row.strategicObjectives || "-",
-        row.keyPerformanceIndicators || "-",
-        row.unit || "-",
-        row.descriptionOfKPI || "-",
-        cleanPercentageValue(row.weightage),
-      ]),
-      ["", "", "", "", "", "Weigh", cleanPercentageValue(totalWeight)],
-      ["", "", "", "", "", "Total Weightage", "100%"],
-    ];
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Overall KPI");
 
-    // Prepare headers for the dynamic table (right side)
-    const dynamicTableHeader = [
-      [
-        "R-GM",
-        "Metro",
-        ...Array(12).fill("Metro"),
-        "Region 1",
-        ...Array(12).fill("Region 1"),
-        "Region 2",
-        ...Array(10).fill("Region 2"),
-        "Region 3",
-        ...Array(2).fill("Region 3"),
-      ],
-      [
-        "P-DGM",
-        ...Array(6).fill("Metro 1"),
-        ...Array(6).fill("Metro 2"),
-        ...Array(6).fill("WPN & NWP"),
-        ...Array(6).fill("CP & NCP"),
-        ...Array(4).fill("SAB & UVA"),
-        ...Array(6).fill("WPS & SP"),
-        ...Array(2).fill("EP"),
-        ...Array(4).fill("NP"),
-      ],
-      ["NW EE", ...columns.flatMap((col) => [col, col])],
-      [
-        "RTOM AREA",
-        ...columns.flatMap(() => [
-          "Achieved KPI",
-          "Achieved KPI with Weightage",
-        ]),
-      ],
-    ];
+  // ---------- LEFT table columns ----------
+  const LEFT_COLS = [
+    "#",
+    "Perspectives",
+    "Strategic Objectives (KRA)",
+    "Key Performance Indicators (KPI)",
+    "Unit",
+    "Description of KPI",
+    "Weightage",
+  ];
+  const leftColsCount = LEFT_COLS.length;
 
-    // Prepare dynamic rows to match static table row indices
-    const staticRowNumbers = kpiData
-      .filter((row) => ![4, 8, 9].includes(row.rowNumber || row.no))
-      .map((row) => row.rowNumber || row.no);
+  // ---------- derive RIGHT header groups from regionHierarchy ----------
+  // each NW EE has 2 leaf columns (Achieved, Achieved with Weightage)
+  const baseColsCount = columns.length;
+  const rightLabelCols = 1;                 // "R-GM" / "P-DGM" / "NW EE" / "RTOM AREA"
+  const leafColsCount = baseColsCount * 2;
+  const rightTotalCols = rightLabelCols + leafColsCount;
+  const RIGHT_START_COL = leftColsCount + 1;
 
-    // Build dynamicTableRows with correct alignment
-    const dynamicTableRows = staticRowNumbers.map((rowNum, idx) => {
-      // Row 1 and 2: KPI rows
-      if (rowNum === 1 || rowNum === 2) {
-        const kpiItem = kpiRes[rowNum - 1];
-        if (!kpiItem) return [];
-        const threshold = rowNum === 1 ? threshold1 : rowNum === 2 ? threshold2 : rowNum === 3 ? threshold3 : null;
-        const wpcVal = kpiItem.percentages["NW/WPC"] || "0.00";
-        const wg =
-          parseFloat(
-            kpiData.find((item) => item.no === (kpiItem.no || kpiItem.rowNumber))
-              ?.weightage
-          ) || 0;
-        // Use columnsAchievedRef for Achieved KPI with Weightage
-        return [
-          rowNum,
-          cleanPercentageValue(rAchieved(wpcVal, threshold)),
-          cleanPercentageValue(columnsAchievedRef.current[`row${rowNum}`][0]),
-          ...columns.flatMap((col, colIdx) => [
-            cleanPercentageValue(rAchieved(kpiItem.percentages[col] || "0.00", threshold)),
-            cleanPercentageValue(columnsAchievedRef.current[`row${rowNum}`][colIdx]),
-          ]),
-        ];
-      }
-      // Row 5: Final Data Row
-      if (rowNum === 5) {
-        return [
-          "5",
-          cleanPercentageValue(subs?.cenhkmd || "0"),
-          cleanPercentageValue(columnsAchievedRef.current.row5[0]),
-          ...columns.flatMap((col, colIdx) => {
-            const key = columnToKeyMap[col];
-            const val = subs?.[key] || 0;
-            return [
-              cleanPercentageValue(val),
-              cleanPercentageValue(columnsAchievedRef.current.row5[colIdx]),
-            ];
-          }),
-        ];
-      }
-      // Row 6: Average Row
-      if (rowNum === 6) {
-        return [
-          "6",
-          cleanPercentageValue(averagePlaceholder?.["NW/WPC"] || "0"),
-          cleanPercentageValue(columnsAchievedRef.current.row6[0]),
-          ...columns.flatMap((col, colIdx) => [
-            cleanPercentageValue(averagePlaceholder?.[col] || "0"),
-            cleanPercentageValue(columnsAchievedRef.current.row6[colIdx]),
-          ]),
-        ];
-      }
-      // Row 7: ServFulOk Row
-      if (rowNum === 7) {
-        return [
-          "7",
-          cleanPercentageValue(servFulOkRow?.["cenhkmd"] || "0"),
-          cleanPercentageValue(columnsAchievedRef.current.row7[0]),
-          ...columns.flatMap((col, colIdx) => {
-            const key = columnToKeyMap[col];
-            const val = servFulOkRow?.[key] || 0;
-            return [
-              cleanPercentageValue(val),
-              cleanPercentageValue(columnsAchievedRef.current.row7[colIdx]),
-            ];
-          }),
-        ];
-      }
-      // Row 10: Current Month Row
-      if (rowNum === 10) {
-        return [
-          "10",
-          cleanPercentageValue(columnSums[columnSums.length - 1] || "0"),
-          cleanPercentageValue(columnsAchievedRef.current.row10[0]),
-          ...columns.flatMap((_, colIdx) => [
-            cleanPercentageValue(columnSums[colIdx] || "0"),
-            cleanPercentageValue(columnsAchievedRef.current.row10[colIdx]),
-          ]),
-        ];
-      }
-      // Otherwise, empty row
-      return [];
-    });
+  // Regions row (R-GM)
+  const dynTopGroups = (regionHierarchy?.length
+    ? regionHierarchy.map(rg => ({
+        title: rg.name,
+        count: (rg.totalEngineers || 0) * 2, // 2 leaf cols per NW EE
+      }))
+    : [{ title: "Regions", count: leafColsCount }]
+  );
 
-    // Add Total Row (row 11)
-    dynamicTableRows.push([
-      "11",
-      "",
-      (() => {
-        const targetRows = [1, 2, 5, 6, 7, 10];
-        const sum = targetRows.reduce((total, rowNum) => {
-          const idx = staticRowNumbers.indexOf(rowNum);
-          const rowValue = dynamicTableRows[idx]?.[2] || "0";
-          const numericValue =
-            parseFloat(rowValue.toString().replace("%", "")) || 0;
-          return total + numericValue;
-        }, 0);
-        return cleanPercentageValue(sum);
-      })(),
-      ...columns.flatMap((_, colIndex) => {
-        const targetRows = [1, 2, 5, 6, 7, 10];
-        const withWeightageIndex = colIndex * 2 + 4;
-        const sum = targetRows.reduce((total, rowNum) => {
-          const idx = staticRowNumbers.indexOf(rowNum);
-          const rowValue =
-            dynamicTableRows[idx]?.[withWeightageIndex] || "0";
-          const numericValue =
-            parseFloat(rowValue.toString().replace("%", "")) || 0;
-          return total + numericValue;
-        }, 0);
-        return ["", cleanPercentageValue(sum)];
-      }),
-    ]);
+  // Provinces row (P-DGM)
+  const dynChildGroups = (regionHierarchy?.length
+    ? regionHierarchy.flatMap(rg =>
+        (rg.provinces || []).map(pv => ({
+          title: pv.name,
+          count: (pv.totalEngineers || 0) * 2,
+        }))
+      )
+    : []
+  );
 
-    // Add Percentage Row (row 12)
-    dynamicTableRows.push([
-      "12",
-      "",
-      (() => {
-        const sumValue =
-          parseFloat(
-            (dynamicTableRows[dynamicTableRows.length - 1][2] || "0")
-              .toString()
-              .replace("%", "")
-          ) || 0;
-        const weightage =
-          parseFloat(totalWeight?.toString().replace("%", "")) || 0;
-        const percentage = (sumValue / weightage) * 100;
-        return cleanPercentageValue(percentage);
-      })(),
-      ...columns.flatMap((_, colIndex) => {
-        const withWeightageIndex = colIndex * 2 + 4;
-        const sumValue =
-          parseFloat(
-            (dynamicTableRows[dynamicTableRows.length - 2][withWeightageIndex] ||
-              "0"
-            )
-              .toString()
-              .replace("%", "")
-          ) || 0;
-        const weightage =
-          parseFloat(totalWeight?.toString().replace("%", "")) || 0;
-        const percentage = (sumValue / weightage) * 100;
-        return ["", cleanPercentageValue(percentage)];
-      }),
-    ]);
+  // sanity: if the sums don't match, fall back to one group covering all columns
+  const sumTop = dynTopGroups.reduce((a, b) => a + b.count, 0);
+  const sumChild = dynChildGroups.reduce((a, b) => a + b.count, 0);
+  const topGroups = sumTop === leafColsCount ? dynTopGroups : [{ title: "Regions", count: leafColsCount }];
+  const childGroups = sumChild === leafColsCount ? dynChildGroups : [];
 
-    // Combine static and dynamic tables row-by-row
-    const mergedTableData = kpiTableRows.map((staticRow, i) => {
-      let dynamicRow = dynamicTableRows[i] || Array(dynamicTableHeader[3].length).fill("");
-      // Remove the first RTOM area's Achieved KPI and Achieved KPI with Weightage (columns 1 and 2 after RTOM AREA)
-      // That means: remove dynamicRow[1] and dynamicRow[2]
-      if (dynamicRow.length > 3) {
-        dynamicRow = [
-          dynamicRow[0], // rowNum
-          // skip dynamicRow[1] and dynamicRow[2]
-          ...dynamicRow.slice(3)
-        ];
-      }
-      return [...staticRow, ...dynamicRow];
-    });
+  // ---------- helpers ----------
+  const pct = (x) => {
+    if (x === null || x === undefined || x === "") return "0.00%";
+    const n = typeof x === "string" ? parseFloat(x.toString().replace("%", "")) : Number(x);
+    if (Number.isNaN(n)) return "0.00%";
+    return `${n.toFixed(2)}%`;
+  };
+  const num = (x) => {
+    if (x === null || x === undefined || x === "") return 0;
+    const n = typeof x === "string" ? parseFloat(x.toString().replace("%", "")) : Number(x);
+    return Number.isNaN(n) ? 0 : n;
+  };
+  const hasKeyForCol = (col) => Boolean(resolveDataKey(col));
 
-    // Create worksheet
-    const worksheet = workbook.addWorksheet("Merged Table");
+  // get weightage (as number, e.g. 10) for a KPI rowNumber
+  const getWeightage = (rowNo) => {
+    const row = kpiData.find(r => (r.rowNumber ?? r.no) === rowNo);
+    return row ? num(row.weightage) : 0;
+  };
 
-    // Add the headers and merged data
-    const finalData = [
-      ["", "", "", "", "", "", "", ...dynamicTableHeader[0]], // First row of dynamic header
-      ["", "", "", "", "", "", "", ...dynamicTableHeader[1]], // Second row of dynamic header
-      ["", "", "", "", "", "", "", ...dynamicTableHeader[2]], // Third row of dynamic header
-      [
-        "#",
-        "Perspectives",
-        "Strategic Objectives (KRA)",
-        "Key Performance Indicators (KPI)",
-        "Unit",
-        "Description of KPI",
-        "Weightage",
-        "RTOM AREA",
-        // Remove the first two headers for the first RTOM area
-        ...columns.slice(0).flatMap(() => [
-          "Achieved KPI",
-          "Achieved KPI with Weightage",
-        ]),
-      ], // Static table header merged with RTOM AREA row
-      ...mergedTableData, // Rest of the table data
-    ];
-
-    // Add rows to the worksheet
-    finalData.forEach((row, rowIndex) => {
-      const addedRow = worksheet.addRow(row);
-      // Apply borders to each cell in the row
-      addedRow.eachCell((cell) => {
-        cell.border = {
-          top: { style: "thin", color: { argb: "000000" } },
-          left: { style: "thin", color: { argb: "000000" } },
-          bottom: { style: "thin", color: { argb: "000000" } },
-          right: { style: "thin", color: { argb: "000000" } },
-        };
-      });
-    });
-
-    // Define the style for the header
-    const headerRows = [1, 2, 3, 4]; // The header row indexes
-
-    headerRows.forEach((rowIndex) => {
-      const row = worksheet.getRow(rowIndex);
-      row.eachCell((cell, colNumber) => {
-        if (cell.value) {
-          // Ensures only header cells are styled
-          cell.font = { bold: true, color: { argb: "FFFFFF" } }; // White font
-          cell.alignment = {
-            horizontal: "center",
-            vertical: "middle",
-            wrapText: true,
-          };
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "0070C0" },
-          }; // Blue background
-        }
-      });
-    });
-
-    // Set column widths
-    worksheet.columns = Array.from({ length: finalData[0].length }, () => ({
-      width: 15,
-    }));
-
-    // Save the workbook as a file
-    workbook.xlsx.writeBuffer().then((buffer) => {
-      const data = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      saveAs(data, "Maintenance_Tables_Aligned.xlsx");
+  // build "Achieved" and "Achieved with Weightage" pairs for a KPI percentages object
+  const buildPairsForKpi = (kpiPercentages, threshold, wg) => {
+    return columns.flatMap((col) => {
+      const val = kpiPercentages?.[getCanonicalDisplayForLookup(col)] ?? "0.00";
+      // KPI rows always exist; show 0 when no KPI data is present
+      const ach = rAchieved(val, threshold);
+      const achW = rAchievedW(val, threshold, wg);
+      return [ach, achW];
     });
   };
+
+  // row builders for the right table
+  const buildRowForKpi = (kpiItem, threshold, rowNo) => {
+    const wg = getWeightage(rowNo);
+    return ["", ...buildPairsForKpi(kpiItem?.percentages, threshold, wg)];
+  };
+
+  // For rows that use a backend key (Final Data / ServFulOk), if the column
+  // has no mapped key -> write blanks.
+  const buildRowFinalData = () => {
+    return ["", ...columns.flatMap((col) => {
+      const key = resolveDataKey(col);
+      if (!key) return ["", ""]; // no mapping -> blank
+      const raw = subs?.[key];
+      if (raw === undefined || raw === null) return ["", ""];
+      const val = num(raw);
+      const ach = pct(val);
+      const achW = rFinalDataRowWithWeightage(val);
+      return [ach, achW];
+    })];
+  };
+
+  const buildRowAverage = () => {
+    return ["", ...columns.flatMap((col) => {
+      const rawStr = averagePlaceholder?.[getCanonicalDisplayForLookup(col)];
+      if (rawStr === undefined || rawStr === null || rawStr === "0.00") {
+        // treat totally missing derived values as blank
+        return ["", ""];
+      }
+      const val = num(rawStr);
+      const ach = pct(val);
+      const achW = rCurrentMonthWithWeightage(val);
+      return [ach, achW];
+    })];
+  };
+
+  const buildRowServFulOk = () => {
+    return ["", ...columns.flatMap((col) => {
+      const key = resolveDataKey(col);
+      if (!key) return ["", ""];
+      const rawStr = servFulOkRow?.[key];
+      if (rawStr === undefined || rawStr === null) return ["", ""];
+      const val = num(rawStr);
+      const ach = pct(val);
+      const achW = rServFulOkWithWeightage(val);
+      return [ach, achW];
+    })];
+  };
+
+  const buildRowCurrentMonth = () => {
+    return ["", ...columns.map((_, i) => {
+      const rawStr = columnSums?.[i];
+      if (rawStr === undefined || rawStr === null || rawStr === "0.00") {
+        return ["", ""];
+      }
+      const val = num(rawStr);
+      const ach = pct(val);
+      const achW = rSumRowWithWeightage(val);
+      return [ach, achW];
+    }).flat()];
+  };
+
+  // sum of achieved-with-weightage across rows 1,2,5,6,7,10 per column (row #11)
+  const buildRowSumAchW = (rows) => {
+    const sums = new Array(baseColsCount).fill(0);
+    rows.forEach((r) => {
+      // r shape: ["", Ach, AchW, Ach, AchW, ...]
+      for (let i = 0; i < baseColsCount; i++) {
+        const achWIdx = 1 + i * 2 + 1; // second of the pair (AchW)
+        sums[i] += num(r[achWIdx]);
+      }
+    });
+    return ["", ...sums.map((v) => ["", v ? pct(v) : ""]).flat()];
+  };
+
+  // row #12: (row11 / totalWeight) * 100
+  const buildRowPercOfWeight = (row11, totalWeightVal) => {
+    const vals = [];
+    for (let i = 0; i < baseColsCount; i++) {
+      const idx = 1 + i * 2 + 1; // AchW cell
+      const v = num(row11[idx]);
+      const p = totalWeightVal ? (v / totalWeightVal) * 100 : 0;
+      vals.push(["", p ? pct(p) : ""]);
+    }
+    return ["", ...vals.flat()];
+  };
+
+  // ---------- LEFT: KPI table content ----------
+  const kpiLeftHeader = [...LEFT_COLS];
+  const kpiLeftRows = kpiData
+    .filter(o => ![4, 8, 9].includes(o.rowNumber ?? o.no))
+    .map(o => [
+      o.rowNumber ?? "-",
+      o.perspectives ?? "-",
+      o.strategicObjectives ?? "-",
+      o.keyPerformanceIndicators ?? "-",
+      o.unit ?? "-",
+      o.descriptionOfKPI ?? "-",
+      pct(o.weightage),
+    ]);
+
+  const rowsToSum = [1, 2, 4, 5, 6, 7, 10];
+  const totalWeightLocal = kpiData
+    .filter(item => rowsToSum.includes(item.rowNumber ?? item.no))
+    .reduce((acc, item) => acc + num(item.weightage), 0);
+
+  const leftSumRow = ["", "", "", "", "", "Weightage", pct(totalWeightLocal)];
+  const leftTotalRow = ["", "", "", "", "", "Total Weightage", "100.00%"];
+
+  // ---------- RIGHT: build all data rows ----------
+  const rightRows = [];
+  if (kpiRes?.[0]) rightRows.push(buildRowForKpi(kpiRes[0], threshold1, 1)); // row #1
+  if (kpiRes?.[1]) rightRows.push(buildRowForKpi(kpiRes[1], threshold2, 2)); // row #2
+  rightRows.push(["", ...Array(leafColsCount).fill("")]);                    // row #3 (blank)
+  rightRows.push(buildRowFinalData());                                       // row #5
+  rightRows.push(buildRowAverage());                                         // row #6
+  rightRows.push(buildRowServFulOk());                                       // row #7
+  rightRows.push(buildRowCurrentMonth());                                    // row #10
+
+  const row11 = buildRowSumAchW(
+    rightRows.filter((_, idx) => [0, 1, 3, 4, 5, 6].includes(idx))
+  );
+  rightRows.push(row11);                                                     // row #11
+  rightRows.push(buildRowPercOfWeight(row11, totalWeightLocal));             // row #12
+
+  // ---------- WRITE HEADER ROWS (combined) ----------
+  // Row 1: (empty left) + R-GM + merged top groups
+  sheet.addRow([...Array(leftColsCount).fill(""), "R-GM", ...Array(leafColsCount).fill("")]);
+  // Row 2: (empty left) + P-DGM + merged child groups
+  sheet.addRow([...Array(leftColsCount).fill(""), "P-DGM", ...Array(leafColsCount).fill("")]);
+  // Row 3: (empty left) + NW EE + merged base col captions
+  sheet.addRow([...Array(leftColsCount).fill(""), "NW EE", ...Array(leafColsCount).fill("")]);
+  // Row 4: left header + "RTOM AREA" + leaf headers
+  const rightLeafHeader = ["RTOM AREA", ...columns.flatMap(() => ["Achieved KPI", "Achieved KPI with Weightage"])];
+  sheet.addRow([...kpiLeftHeader, ...rightLeafHeader]);
+
+  // ---------- MERGES for right header blocks ----------
+  // Row 1 (top groups)
+  let c = RIGHT_START_COL + 1;
+  topGroups.forEach(g => {
+    const span = g.count;
+    sheet.mergeCells(1, c, 1, c + span - 1);
+    sheet.getCell(1, c).value = g.title;
+    c += span;
+  });
+
+  // Row 2 (child groups)
+  c = RIGHT_START_COL + 1;
+  if (childGroups.length) {
+    childGroups.forEach(g => {
+      const span = g.count;
+      sheet.mergeCells(2, c, 2, c + span - 1);
+      sheet.getCell(2, c).value = g.title;
+      c += span;
+    });
+  } else {
+    // no province breakdown -> merge across all leaf columns
+    sheet.mergeCells(2, RIGHT_START_COL + 1, 2, RIGHT_START_COL + leafColsCount);
+    sheet.getCell(2, RIGHT_START_COL + 1).value = "Areas";
+  }
+
+  // Row 3 (base column names): each base col spans 2 leaf columns
+  for (let i = 0; i < baseColsCount; i++) {
+    const start = RIGHT_START_COL + 1 + i * 2;
+    sheet.mergeCells(3, start, 3, start + 1);
+    sheet.getCell(3, start).value = columns[i];
+  }
+
+  // ---------- BODY: write side-by-side ----------
+  const maxBodyRows = Math.max(kpiLeftRows.length + 2, rightRows.length); // +2 for left summary rows
+  for (let i = 0; i < maxBodyRows; i++) {
+    let left;
+    if (i < kpiLeftRows.length) {
+      left = kpiLeftRows[i];
+    } else if (i === kpiLeftRows.length) {
+      left = leftSumRow;
+    } else if (i === kpiLeftRows.length + 1) {
+      left = leftTotalRow;
+    } else {
+      left = Array(leftColsCount).fill("");
+    }
+
+    const right = rightRows[i] ?? ["", ...Array(leafColsCount).fill("")];
+
+    const addedRow = sheet.addRow([...left, ...right]);
+
+    // bold the two summary rows on the left
+    if (i === kpiLeftRows.length || i === kpiLeftRows.length + 1) {
+      for (let col = 1; col <= leftColsCount; col++) {
+        const cell = addedRow.getCell(col);
+        cell.font = { ...(cell.font || {}), bold: true };
+      }
+    }
+
+    // bold the FINAL two rows across full width
+    if (i >= maxBodyRows - 2) {
+      const fullWidth = leftColsCount + rightTotalCols;
+      for (let col = 1; col <= fullWidth; col++) {
+        const cell = addedRow.getCell(col);
+        cell.font = { ...(cell.font || {}), bold: true };
+      }
+    }
+  }
+
+  // ---------- Styling ----------
+  const headerRows = [1, 2, 3, 4];
+  headerRows.forEach((r) => {
+    const row = sheet.getRow(r);
+    row.eachCell((cell) => {
+      if (cell.value !== undefined && cell.value !== "") {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0070C0" },
+        };
+      } else {
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      }
+    });
+  });
+
+  // borders for all used cells
+  const lastRow = sheet.lastRow.number;
+  const lastCol = leftColsCount + rightTotalCols;
+  for (let r = 1; r <= lastRow; r++) {
+    for (let col = 1; col <= lastCol; col++) {
+      const cell = sheet.getCell(r, col);
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF000000" } },
+        left: { style: "thin", color: { argb: "FF000000" } },
+        bottom: { style: "thin", color: { argb: "FF000000" } },
+        right: { style: "thin", color: { argb: "FF000000" } },
+      };
+      if (r >= 5) cell.alignment = { vertical: "middle", horizontal: "center" };
+    }
+  }
+
+  // column widths
+  const widths = [6, 16, 22, 36, 10, 38, 12];
+  for (let i = 0; i < leftColsCount; i++) {
+    sheet.getColumn(i + 1).width = widths[i] || 14;
+  }
+  for (let i = RIGHT_START_COL; i <= lastCol; i++) {
+    sheet.getColumn(i).width = 14;
+  }
+
+  // freeze headers
+  sheet.views = [{ state: "frozen", xSplit: 0, ySplit: 4 }];
+
+  // save
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, "Overall_KPI.xlsx");
+};
+
 
 // ...existing code...
   if (loading) {
@@ -1625,34 +1739,7 @@ export default function FinalTables() {
   return (
     <ProtectedComponent>
       <div className="final-tables-container">
-        {/* <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '65px',
-        marginBottom: '15px',
-        justifyContent: 'flex-start',
-        padding: '0 20px',
-        marginTop: '30px',
-      }}
-    >
-      {row12Data.map((val, idx) => (
-        <div key={idx} style={{ width: '120px', textAlign: 'center' }}>
-          <CircularProgressbar
-            value={val}
-            maxValue={100}
-            text={`${val}%`}
-            styles={buildStyles({
-              pathColor: `rgba(62, 152, 199, ${val / 100})`,
-              textColor: '#000',
-              trailColor: '#d6d6d6',
-              backgroundColor: '#f3f3f3',
-            })}
-          />
-          <p style={{ marginTop: '10px' ,color: 'black'  }}>{columns[idx]}</p>
-        </div>
-      ))}
-    </div> */}
+        {/*/}
 
         {/* Title */}
         <h1 className="final-tables-title">Final KPI</h1>
@@ -1662,8 +1749,19 @@ export default function FinalTables() {
           {/* LEFT: KPI Table */}
           <div className="kpi-table-container">
             {/* <h2 className="kpi-table-subtitle">Key Performance Indicators (KPI) Table</h2> */}
+            {/* rgm,pdgm,nw ee,rtom area header rows */}
             <table className="kpi-table">
               <thead>
+                <tr className="colSpan-header"> 
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px", backgroundColor: "#2b51baff", color: "white" }} >R-GM </th>                
+                  </tr>
+                <tr className="colSpan-header"> 
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px" , backgroundColor: "#2b51baff", color: "white"}} >P-DGM</th>
+                </tr>
+                <tr className="colSpan-header" >
+                  <th colSpan="7" style={{ textAlign: "right", paddingLeft: "50px", paddingRight: "20px", backgroundColor: "#2b51baff", color: "white"  }} >NW EE/RTOM AREA</th>
+                </tr>
+
                 <tr>
                   <th>#</th>
                   <th>Perspectives</th>
@@ -1673,6 +1771,7 @@ export default function FinalTables() {
                   <th>Description of KPI</th>
                   <th>Weightage</th>
                 </tr>
+                
               </thead>
               <tbody>
                 {kpiData.length ? (
@@ -1708,31 +1807,37 @@ export default function FinalTables() {
             </table>
           </div>
 
-          {/* RIGHT: Platform Distribution Table */}
+          {/* RIGHT side: Platform Distribution Table */}
           <div className="final-table-container">
             {/* <h2 className="final-table-subtitle">Platform Distribution and Achievements</h2> */}
             <table className="final-distribution-table">
               <thead>
                 <tr style={{ height: "1px" }}>
-                  <th>R-GM</th>
-                  <th colSpan="12">Metro</th>
-                  <th colSpan="12">Region 1</th>
-                  <th colSpan="10">Region 2</th>
-                  <th colSpan="6">Region 3</th>
+                 
+                  {regionHierarchy.length
+                    ? regionHierarchy.map((rg) => (
+                        <th key={rg.name} colSpan={(rg.totalEngineers || 0) * 2}>
+                          {rg.name}
+                        </th>
+                      ))
+                    : (
+                        <th colSpan={columns.length * 2}>Regions</th>
+                      )}
                 </tr>
                 <tr>
-                  <th>P-DGM</th>
-                  <th colSpan="6">Metro 1</th>
-                  <th colSpan="6">Metro 2</th>
-                  <th colSpan="6">WPN & NWP</th>
-                  <th colSpan="6">CP & NCP</th>
-                  <th colSpan="4">SAB & UVA</th>
-                  <th colSpan="6">WPS & SP</th>
-                  <th colSpan="2">EP</th>
-                  <th colSpan="4">NP</th>
+                  
+                  {regionHierarchy.length
+                    ? regionHierarchy.flatMap((rg) =>
+                        rg.provinces.map((pv) => (
+                          <th key={`${rg.name}-${pv.name}`} colSpan={(pv.totalEngineers || 0) * 2}>
+                            {pv.name}
+                          </th>
+                        ))
+                      )
+                    : null}
                 </tr>
                 <tr>
-                  <th>NW EE</th>
+                  
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
@@ -1742,7 +1847,7 @@ export default function FinalTables() {
                 </tr>
 
                 <tr>
-                  <th>RTOM AREA</th>
+                  
 
                   {columns.map((col) => (
                     <React.Fragment key={col}>
@@ -1764,7 +1869,6 @@ export default function FinalTables() {
                   <td></td>
                 </tr>
                
-
                 {/* 5) Final Data Row (row #5) */}
                 {renderFinalDataRow()}
 
@@ -1807,4 +1911,4 @@ export default function FinalTables() {
   );
 }
 
-// ==================== End of FinalTables.js ====================
+//

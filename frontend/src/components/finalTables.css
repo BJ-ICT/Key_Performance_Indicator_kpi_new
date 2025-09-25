@@ -10,6 +10,24 @@
     padding: 20px;
     width: 100%;
 }
+.final-tables-title{
+    margin-bottom: 30px;
+    text-align: center;
+    margin-top: 40px;
+    width: 600px;
+}
+/*  R-GM ,P-DGM	and NW EE / RTOM AREA	colSpan style */
+.colSpan-header th {
+    padding-left: 50px;
+    padding-right: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600; 
+    color: #402978;
+    background-color: #f9fafb; /* subtle light gray */
+    text-align: right; /* if you want it right-aligned */
+}
+
+
 
 /* Title styles */
 .final-tables-title {
@@ -39,7 +57,7 @@
 
 /* Remove the padding top from KPI table */
 .side-by-side-tables .kpi-table-container {
-    padding-top: 171px;
+    padding-top: 0px;
 }
 
 /* General table styling */
@@ -58,16 +76,23 @@
 .final-maintenance-table th,
 .final-distribution-table th,
 .kpi-table th {
+    font-family:poppins, sans-serif;
     background-color: #2196f3;
     color: white;
     text-align: center;
+    text-decoration: double;
     padding: 12px;
     font-size: 14px;
     border: 1px solid #0f0f0f;
-    height: 40px;
-    line-height: 40px;
+    height: 10px;
+    line-height: 20px;
     white-space: nowrap;
+    font-weight: 600;
+    font-weight: bold; 
+
 }
+
+
 
 /* Body cell styling */
 .final-maintenance-table td,
@@ -96,14 +121,12 @@
 .kpi-table tbody tr:nth-child(even) {
     background-color: #ffffff;
 }
-
-/* Hover effect */
-.final-maintenance-table tbody tr:hover,
-.final-distribution-table tbody tr:hover,
-.kpi-table tbody tr:hover {
-    background-color: #bbdefb;
-    cursor: pointer;
+.final-maintenance-table td,
+.final-distribution-table td,
+.kpi-table td {
+  background-color: transparent;
 }
+
 
 /* Column headers with colspan */
 .final-distribution-table th[colspan],
@@ -111,8 +134,11 @@
     text-align: center;
     font-size: 12px;
     padding: 8px;
-    background-color: #1976d2;
+    background-color: #2b51baff;
     color: white;
+
+
+    
 }
 
 /* Footer styling */
@@ -143,7 +169,7 @@
     white-space: nowrap;
 }
 
-/* Media query for mobile responsiveness */
+/* _Media query for mobile responsiveness */
 @media screen and (max-width: 768px) {
     .side-by-side-tables {
         flex-direction: column;
@@ -165,11 +191,47 @@
     border: 12px solid #f3f3f3;
     border-top: 12px solid #1976d2;
     border-radius: 50%;
-    width: 0px;
+    width: 0px; /* ❌ probably should be 100px? */
     height: 100px;
     animation: final-tables-spin 1.5s linear infinite;
-    margin: 50px auto;
 }
+
+.final-distribution-table td:hover,
+.final-distribution-table th:hover {
+  cursor: pointer;
+  background-color: #10b981 !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+/* Add this in your global CSS */
+.cursor {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #402978;
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none; /* so it doesn't block clicks */
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease;
+  z-index: 9999;
+}
+
+.side-by-side-tables {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;          /* ❌ prevent wrapping */
+  overflow-x: auto;           /* ✅ allow horizontal scroll on mobile */
+  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+  align-items: flex-start;    /* keep aligned to top */
+}
+
+.kpi-table-container,
+.final-table-container {
+  flex-shrink: 0;             /* ❌ prevent shrinking */
+  min-width: 400px;           /* ✅ ensure tables keep a readable width */
+}
+
 
 @keyframes final-tables-spin {
     0% { transform: rotate(0deg); }
