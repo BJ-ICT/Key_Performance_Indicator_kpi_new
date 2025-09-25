@@ -169,7 +169,7 @@
     white-space: nowrap;
 }
 
-/* Media query for mobile responsiveness */
+/* _Media query for mobile responsiveness */
 @media screen and (max-width: 768px) {
     .side-by-side-tables {
         flex-direction: column;

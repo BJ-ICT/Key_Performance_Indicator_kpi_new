@@ -1807,7 +1807,7 @@ export default function FinalTables() {
             </table>
           </div>
 
-          {/* RIGHT: Platform Distribution Table */}
+          {/* RIGHT side: Platform Distribution Table */}
           <div className="final-table-container">
             {/* <h2 className="final-table-subtitle">Platform Distribution and Achievements</h2> */}
             <table className="final-distribution-table">

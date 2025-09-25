@@ -23,6 +23,7 @@ const sortRegionNames = (a, b) => {
 
   return a.localeCompare(b);
 };
+// 
 
 function readRow12FromLocalStorage() {
   if (typeof window === "undefined") return null;
@@ -276,6 +277,8 @@ export default function Dashboard() {
                             fontSize: "0.9rem",
                           }}
                         >
+
+
                           {meter}
                         </p>
                       </motion.div>
