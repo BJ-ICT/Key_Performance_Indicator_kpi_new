@@ -1,4 +1,4 @@
-// /form8 edit karann kalin 
+// table eki , form eki. thama table eki dropdown form eki link karala neeeee (Friday)
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -104,17 +104,29 @@ const Form6Table = () => {
 
   // Calculate percentage for both forms
   const calculatePercentageForm8 = (totalMinutes, unavailableMinutes, totalNodes) => {
-    const totalAvailableMinutes = totalMinutes - unavailableMinutes;
-    const totalMin = 24 * 60 * daysInMonth * totalNodes;
+    const minutes = Number(totalMinutes) || 0;
+    const unavailable = Number(unavailableMinutes) || 0;
+    const nodes = Number(totalNodes) || 0;
+    const totalAvailableMinutes = minutes - unavailable;
+    const totalMin = 24 * 60 * daysInMonth * nodes;
 
-    if (totalMin === 0) return 100;
-    return (100 * totalAvailableMinutes) / totalMin;
+    if (totalMin <= 0) return 100; // Avoid invalid denominator
+    const raw = (100 * totalAvailableMinutes) / totalMin;
+    return Math.max(0, Math.min(100, raw));
   };
 
   const calculatePercentageForm9 = (Total_Failed_Links, Links_SLA_Not_Violated) => {
-    if (Total_Failed_Links === 0) return 100;
-    return (100 * Links_SLA_Not_Violated) / Total_Failed_Links;
-  };
+    // Convert to numbers and handle null/undefined cases
+    const totalFailed = Number(Total_Failed_Links) || 0;
+    const slaNotViolated = Number(Links_SLA_Not_Violated) || 0;
+    
+    // If no failed links, return 100%
+    if (totalFailed === 0) return 100;
+    
+    // Calculate percentage and clamp to 0..100
+    const raw = (100 * slaNotViolated) / totalFailed;
+    return Math.max(0, Math.min(100, raw));
+};
 
  // Handle cell editing with permission check
  const handleEditClick = (rowId, parentKey, childKey, value) => {
@@ -139,10 +151,24 @@ const handleInputBlur = () => {
       const updatedEntry = { ...entry };
 
       if (editCell.parentKey && editCell.childKey) {
-        updatedEntry[editCell.parentKey] = {
-          ...updatedEntry[editCell.parentKey],
-          [editCell.childKey]: editCell.value,
+        const parentKey = editCell.parentKey;
+        const childKey = editCell.childKey;
+        const newValue = editCell.value;
+
+        updatedEntry[parentKey] = {
+          ...updatedEntry[parentKey],
+          [childKey]: newValue,
         };
+
+        // If total_nodes was edited for form8 entries, update total_minutes accordingly
+        if (entry.formType === 'form8' && parentKey === 'total_nodes') {
+          const nodes = Number(newValue) || 0;
+          const computedTotalMinutes = 24 * 60 * daysInMonth * nodes;
+          updatedEntry.total_minutes = {
+            ...updatedEntry.total_minutes,
+            [childKey]: computedTotalMinutes,
+          };
+        }
       } else {
         updatedEntry[editCell.parentKey] = editCell.value;
       }
@@ -159,7 +185,7 @@ const handleInputBlur = () => {
 
   setForm8Data(updatedForm8Data);
   setForm9Data(updatedForm9Data);
-  setEditCell({ rowId: null, parentKey: null, childKey: null, value: '' });
+  setEditCell({ rowId: null, parentKey: null, childKey: null, value: '' });
 };
 
 
@@ -440,10 +466,14 @@ const handleInputBlur = () => {
       areas.forEach((area) => {
         let percentage = "";
         if (entry.formType === "form8" && entry.total_minutes?.[area] !== undefined) {
+          const nodesVal = Number(entry.total_nodes?.[area]) || 0;
+          const manualTotal = Number(entry.total_minutes?.[area]) || 0;
+          const computedTotal = 24 * 60 * daysInMonth * nodesVal;
+          const totalForCalc = manualTotal !== 0 ? manualTotal : computedTotal;
           percentage = calculatePercentageForm8(
-            entry.total_minutes[area],
+            totalForCalc,
             entry.unavailable_minutes[area],
-            entry.total_nodes[area]
+            nodesVal
           ).toFixed(2) + "%";
         } else if (entry.formType === "form9" && entry.Total_Failed_Links?.[area] !== undefined) {
           percentage = calculatePercentageForm9(
@@ -463,7 +493,10 @@ const handleInputBlur = () => {
         // Total Minutes
         const totalMinutesRow = ["", "Total Minutes", "", "", ""];
         areas.forEach(area => {
-          totalMinutesRow.push(entry.total_minutes?.[area] || "");
+          const nodesVal = Number(entry.total_nodes?.[area]) || 0;
+          const manualTotal = Number(entry.total_minutes?.[area]) || 0;
+          const computedTotal = 24 * 60 * daysInMonth * nodesVal;
+          totalMinutesRow.push(manualTotal !== 0 ? manualTotal : computedTotal);
         });
         const tmRow = worksheet.addRow(totalMinutesRow);
         applyBorderAndAlignment(tmRow);
@@ -600,10 +633,14 @@ const handleInputBlur = () => {
             const percentages = {};
             if (entry.total_minutes) {
               for (const key of Object.keys(entry.total_minutes)) {
+                const nodesVal = Number(entry.total_nodes?.[key]) || 0;
+                const manualTotal = Number(entry.total_minutes?.[key]) || 0;
+                const computedTotal = 24 * 60 * daysInMonth * nodesVal;
+                const totalForCalc = manualTotal !== 0 ? manualTotal : computedTotal;
                 percentages[key] = calculatePercentageForm8(
-                  entry.total_minutes[key],
+                  totalForCalc,
                   entry.unavailable_minutes[key],
-                  entry.total_nodes[key]
+                  nodesVal
                 );
               }
             } else if (entry.Total_Failed_Links) {
@@ -676,7 +713,12 @@ const handleInputBlur = () => {
                           </div>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
-                            {entry.total_minutes[key]}
+                            {(() => {
+                              const manual = Number(entry.total_minutes[key]) || 0;
+                              const nodes = Number(entry.total_nodes?.[key]) || 0;
+                              const computed = 24 * 60 * daysInMonth * nodes;
+                              return manual !== 0 ? manual : computed;
+                            })()}
                             {role == "puser" && isEditingAllowed && (
                               <button
                                 className="table-button"
