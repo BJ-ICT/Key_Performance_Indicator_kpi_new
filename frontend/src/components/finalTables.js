@@ -1217,31 +1217,43 @@ export default function FinalTables() {
     );
   };
 
-  // KPI Table helpers
-  const renderKpiWeightageSumRow = () => {
-    if (!kpiData.length) return null;
-    const rowsToSum = [1, 2, 4, 5, 6, 7, 10];
-    const totalWeightCalc = kpiData
-      .filter(
-        (item) =>
-          rowsToSum.includes(item.rowNumber) || rowsToSum.includes(item.no)
-      )
-      .reduce((acc, item) => {
-        const rawStr = item.weightage || "0";
-        const numeric = parseFloat(String(rawStr).replace("%", "")) || 0;
-        return acc + numeric;
-      }, 0);
-    return (
-      <tr key="kpi-weightage-sum-row" style={{ backgroundColor: "#f5f5f5" }}>
-        <td colSpan="6" style={{ textAlign: "right", fontWeight: "bold" }}>
-          Weightage
-        </td>
-        <td style={{ fontWeight: "bold" }}>
-          {totalWeightCalc.toFixed(2) + "%"}
-        </td>
-      </tr>
-    );
-  };
+        // KPI Table helpers
+      const renderKpiWeightageSumRow = () => {
+        if (!kpiData.length) return null;
+        const rowsToSum = [1, 2, 4, 5, 6, 7, 10];
+        const totalWeightCalc = kpiData
+          .filter(
+            (item) =>
+              rowsToSum.includes(item.rowNumber) || rowsToSum.includes(item.no)
+          )
+          .reduce((acc, item) => {
+            const rawStr = item.weightage || "0";
+            const numeric = parseFloat(String(rawStr).replace("%", "")) || 0;
+
+            // ✅ only include weightage if region has data
+            const hasData = columns.some((col) => {
+              const key = resolveDataKey(col);
+              return (
+                (item?.percentages && item.percentages[col] !== undefined) ||
+                (subs?.[key] !== undefined)
+              );
+            });
+
+            return hasData ? acc + numeric : acc;
+          }, 0);
+
+        return (
+          <tr key="kpi-weightage-sum-row" style={{ backgroundColor: "#f5f5f5" }}>
+            <td colSpan="6" style={{ textAlign: "right", fontWeight: "bold" }}>
+              Weightage
+            </td>
+            <td style={{ fontWeight: "bold" }}>
+              {totalWeightCalc.toFixed(2) + "%"}
+            </td>
+          </tr>
+        );
+      };
+
 
   const renderKpiSubWeightageSumRow = () => {
     return (
@@ -1893,15 +1905,17 @@ export default function FinalTables() {
         <button
           onClick={exportToExcel}
           style={{
-            padding: "10px 20px",
-            backgroundColor: "#4a90e2",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            marginBottom: "40px",
-            fontSize: "14px",
-            marginTop: "20px",
+            padding: "12px 28px",
+          backgroundColor: "#4A90E2",
+          color: "#fff",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          margin: "20px 0 40px",
+          fontSize: "15px",
+          fontWeight: "500",
+          boxShadow: "0 3px 6px rgba(0,0,0,0.15)",
+          transition: "background-color 0.3s ease, transform 0.1s ease",
           }}
         >
           <b>Export to Excel</b>

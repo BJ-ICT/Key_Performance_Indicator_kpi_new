@@ -26,7 +26,10 @@
     background-color: #f9fafb; /* subtle light gray */
     text-align: right; /* if you want it right-aligned */
 }
-
+.final-tables-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+}
 
 
 /* Title styles */
