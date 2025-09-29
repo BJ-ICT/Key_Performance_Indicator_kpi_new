@@ -1,7 +1,7 @@
 // src/components/Dashboard.js
 
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import axios from "axios"; // used only for region table (Row-12 now from localStorage only)
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { motion } from "framer-motion";
@@ -53,38 +53,7 @@ function readRow12FromLocalStorage() {
   return null;
 }
 
-async function fetchRow12MapFromApi() {
-  try {
-    const { data } = await axios.get("/api/finaltable/row12");
-    if (!data) return null;
-
-    if (data.valuesByMeter) return data.valuesByMeter;
-
-    if (Array.isArray(data?.columns) && Array.isArray(data?.values)) {
-      const map = {};
-      data.columns.forEach((m, i) => {
-        const v = parseFloat(data.values[i]);
-        map[m] = Number.isFinite(v) ? v : 0;
-      });
-      return map;
-    }
-
-    if (Array.isArray(data)) {
-      const map = {};
-      data.forEach(({ meter, name, column, value }) => {
-        const key = meter ?? name ?? column;
-        const val = parseFloat(value);
-        if (key) map[key] = Number.isFinite(val) ? val : 0;
-      });
-      return Object.keys(map).length ? map : null;
-    }
-
-    return null;
-  } catch(err) {
-    console.error("Failed to fetch Row 12 map from API", err);
-    return null;
-  }
-}
+// Removed remote fetch for Row-12: relying exclusively on localStorage (written by FinalTables component).
 
 
 // ==============================
@@ -121,17 +90,27 @@ export default function Dashboard() {
     })();
   }, []);
 
+  // Load Row-12 totals from localStorage only, retrying for a short time while FinalTables computes.
   useEffect(() => {
-    (async () => {
-      const api = await fetchRow12MapFromApi();
-      if (api) {
-        setTotals(api);
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 20; // up to ~20 seconds
+    const tryLoad = () => {
+      if (cancelled) return;
+      const ls = readRow12FromLocalStorage();
+      if (ls && Object.keys(ls).length) {
+        setTotals(ls);
         setLoading(false);
-        return;
+      } else if (attempts < maxAttempts) {
+        attempts += 1;
+        setTimeout(tryLoad, 1000);
+      } else {
+        setTotals({});
+        setLoading(false);
       }
-      setTotals(readRow12FromLocalStorage() || {});
-      setLoading(false);
-    })();
+    };
+    tryLoad();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
