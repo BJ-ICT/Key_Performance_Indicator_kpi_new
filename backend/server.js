@@ -10,10 +10,10 @@ import connectDB from "./config/dbfinal.js";
 import { fileURLToPath } from "url";
 
 // Import services and routes
-import repeatedHardcodeTab1Routes from "./routes/3repeatedHardcodeTab1Routes.js"; // Import 3repeatedhardcodetab1 routes
-import MTNCRoutineTable1Routes from "./routes/MTNCRoutineTable1Routes.js"; // Import MTNC Routine Table 1 routes
+import repeatedHardcodeTab1Routes from "./routes/3repeatedHardcodeTab1Routes.js";
+import MTNCRoutineTable1Routes from "./routes/MTNCRoutineTable1Routes.js";
 import multiTableDataRoutes from "./routes/MultiTableDataRoutes.js";
-import TMTable1Routes from "./routes/TMTable1Routes.js"; // Import TM Table 1 routes
+import TMTable1Routes from "./routes/TMTable1Routes.js";
 import finalDataRoutes from "./routes/finalDataRoutes.js";
 import kpiTowerRoutes from "./routes/kpiTowerRoutes.js";
 import { fetchAndStoreAllData } from "./services/DataService.js";
@@ -37,12 +37,13 @@ import processedDataFetch1Router from "./routes/processedDataFetch1.js";
 import authRoutes from "./routes/auth.js";
 import emailRoutes from "./routes/emailRoutes.js";
 import accessRequestRoutes from "./routes/accessRequestRoutes.js";
+import msanRowRoutes from "./routes/msan-row.js";   // ✅ lowercase, consistent
 import regionTableRoutes from "./routes/regionTableRoutes.js";
 
 // Load environment variables
 dotenv.config();
 
-// Get the current directory equivalent to __dirname
+// Get the current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -56,17 +57,15 @@ const sslOptions = {
   cert: fs.readFileSync(sslCertPath),
 };
 
+// ✅ Create express app FIRST
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 
-//app.use(cors({
-//origin: 'https://socapplications.intranet.slt.com.lk:3000', // Adjust as needed
-//credentials: true
-//}));
-//const cors = require('cors');
+// ✅ Custom Routes
+app.use("/api/msan-row", msanRowRoutes);
 
 // Connect to MongoDB
 (async () => {
@@ -87,9 +86,7 @@ const checkAndPopulateData = async () => {
       console.log('No data found in "tabledatas" collection. Fetching data...');
       await fetchDataAndSave();
     } else {
-      console.log(
-        'Data already exists in the "tabledatas" collection. Skipping fetch.'
-      );
+      console.log('Data already exists in "tabledatas". Skipping fetch.');
     }
   } catch (error) {
     console.error("Error checking and populating data:", error);
@@ -99,14 +96,13 @@ const checkAndPopulateData = async () => {
 // Function to fetch and save additional data
 const fetchDataAndSave = async () => {
   try {
-    //const response = await axios.get('https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data');
+    // const response = await axios.get('https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data');
     const oldData = response.data;
 
     const transformedData = await Promise.all(
       oldData.map(async (entry) => {
         try {
           const xml = entry.response;
-
           const parsedXml = await parseStringPromise(xml);
           const soapBody = parsedXml?.["soap:Envelope"]?.["soap:Body"]?.[0];
           if (soapBody) {
@@ -114,17 +110,11 @@ const fetchDataAndSave = async () => {
             if (towerResponse && towerResponse.TowerMaintenanceResult) {
               const resultString = towerResponse.TowerMaintenanceResult[0];
               const cleanedResult = resultString
-                .replace(
-                  /"Column3":(\d+)"Column4":/g,
-                  '"Column3":$1,"Column4":'
-                )
+                .replace(/"Column3":(\d+)"Column4":/g, '"Column3":$1,"Column4":')
                 .replace(/,(?=\})/g, "");
 
               const parsedResult = JSON.parse(cleanedResult);
-              return {
-                month: entry.month,
-                details: parsedResult,
-              };
+              return { month: entry.month, details: parsedResult };
             }
           }
           return null;
@@ -135,9 +125,7 @@ const fetchDataAndSave = async () => {
       })
     );
 
-    const validTransformedData = transformedData.filter(
-      (data) => data !== null
-    );
+    const validTransformedData = transformedData.filter((data) => data !== null);
     const newEntries = [];
     for (const dataEntry of validTransformedData) {
       const exists = await TableDataModel.findOne({
@@ -164,14 +152,14 @@ const fetchDataAndSave = async () => {
 (async () => {
   try {
     console.log("Starting data fetch and storage...");
-    await fetchAndStoreAllData(); // Fetch data directly from the database
+    await fetchAndStoreAllData();
     console.log("Data fetch and storage completed.");
   } catch (error) {
     console.error("Error during data initialization:", error);
   }
 })();
 
-// Serve static files from the "public" directory
+// Serve static files
 const publicDir = path.join(__dirname, "routes/public");
 app.use("/public", express.static(publicDir));
 
@@ -186,20 +174,20 @@ app.use("/form7", form7Router);
 app.use("/form8", form8Router);
 app.use("/form9", form9Router);
 app.use("/form10", form10Router);
-app.use("/data-fetch2", dataFetchRouter2);
 app.use("/data-fetch1", dataFetchRouter1);
+app.use("/data-fetch2", dataFetchRouter2);
 app.use("/api", saveTMActivityPlanRoutes);
 app.use("/api", processedDataFetch1Router);
 app.use("/api/multi-table", multiTableDataRoutes);
-app.use("/api/final-data", finalDataRoutes); // Final Data Routes
-app.use("/api/kpi-tower", kpiTowerRoutes); // KPI Tower Table Routes
-app.use("/api/tm-table1", TMTable1Routes); // TM Table 1 Routes
-app.use("/api/mtnc-routine", MTNCRoutineTable1Routes); // MTNC Routine Table 1 Routes
-app.use("/api/repeated-hardcode-tab1", repeatedHardcodeTab1Routes); // 3RepeatedHardcodeTab1 Routes
+app.use("/api/final-data", finalDataRoutes);
+app.use("/api/kpi-tower", kpiTowerRoutes);
+app.use("/api/tm-table1", TMTable1Routes);
+app.use("/api/mtnc-routine", MTNCRoutineTable1Routes);
+app.use("/api/repeated-hardcode-tab1", repeatedHardcodeTab1Routes);
 app.use("/auth", authRoutes);
 app.use("/api/emails", emailRoutes);
-app.use("/api/access-requests", accessRequestRoutes); // Access Request Routes
-app.use("/api/region-table", regionTableRoutes); // Region Table Routes
+app.use("/api/access-requests", accessRequestRoutes);
+app.use("/api/region-table", regionTableRoutes);
 
 // Start the HTTPS server
 const PORT = process.env.PORT || 8070;
