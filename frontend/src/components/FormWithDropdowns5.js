@@ -345,14 +345,21 @@ const Form6Table = () => {
                               type="text"
                               value={editCell.value}
                               onChange={handleInputChange}
-                              onBlur={handleInputBlur}
                               autoFocus
                             />
+                            <button
+                              className="table-button"
+                              onClick={handleInputBlur}
+                              style={{ marginLeft: '10px' }}
+                            >
+                              Done
+                            </button>
                             <button
                               className="table-button"
                               onClick={() =>
                                 setEditCell({ rowId: null, key: null, value: "" })
                               }
+                              style={{ marginLeft: '10px' }}
                             >
                               Cancel
                             </button>

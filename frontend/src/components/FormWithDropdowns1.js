@@ -449,7 +449,16 @@ function Dropdown1() {
                         <input
                           type="text"
                           name={key}
-                          value={item[key] || ""}
+                          value={(() => {
+                            // Show the correct previous value for both flat and nested area keys
+                            if (item[key] !== undefined && item[key] !== null && item[key] !== "") return item[key];
+                            if (item.areas && typeof item.areas === "object") {
+                              const normalizedKey = key.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+                              if (item.areas[key] !== undefined) return item.areas[key];
+                              if (item.areas[normalizedKey] !== undefined) return item.areas[normalizedKey];
+                            }
+                            return "";
+                          })()}
                           onChange={(e) => handleFieldChange(e, item._id)}
                           autoFocus
                         />
