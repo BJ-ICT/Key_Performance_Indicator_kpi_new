@@ -23,7 +23,6 @@ import TableDataModel from "./models/TableDataModel.js";
 import dataFetchRouter1 from "./routes/dataFetch1.js";
 import dataFetchRouter2 from "./routes/dataFetch2.js";
 import form1Router from "./routes/form1.js";
-import form10Router from "./routes/form10.js";
 import form2Router from "./routes/form2.js";
 import form3Router from "./routes/form3.js";
 import form4Router from "./routes/form4.js";
@@ -32,12 +31,13 @@ import form6Router from "./routes/form6.js";
 import form7Router from "./routes/form7.js";
 import form8Router from "./routes/form8.js";
 import form9Router from "./routes/form9.js";
+import form10Router from "./routes/form10.js";
 import saveTMActivityPlanRoutes from "./routes/mainTable.js";
 import processedDataFetch1Router from "./routes/processedDataFetch1.js";
 import authRoutes from "./routes/auth.js";
 import emailRoutes from "./routes/emailRoutes.js";
 import accessRequestRoutes from "./routes/accessRequestRoutes.js";
-import msanRowRoutes from "./routes/msan-row.js";   // ✅ lowercase, consistent
+import msanRowRoutes from "./routes/msan-row.js";
 import regionTableRoutes from "./routes/regionTableRoutes.js";
 
 // Load environment variables
@@ -57,17 +57,14 @@ const sslOptions = {
   cert: fs.readFileSync(sslCertPath),
 };
 
-// ✅ Create express app FIRST
+// Create express app
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 
-// ✅ Custom Routes
-app.use("/api/msan-row", msanRowRoutes);
-
-// Connect to MongoDB
+// MongoDB connection
 (async () => {
   try {
     await connectDB();
@@ -78,25 +75,13 @@ app.use("/api/msan-row", msanRowRoutes);
   }
 })();
 
-// Function to check and populate data if collection is empty
-const checkAndPopulateData = async () => {
-  try {
-    const count = await TableDataModel.countDocuments();
-    if (count === 0) {
-      console.log('No data found in "tabledatas" collection. Fetching data...');
-      await fetchDataAndSave();
-    } else {
-      console.log('Data already exists in "tabledatas". Skipping fetch.');
-    }
-  } catch (error) {
-    console.error("Error checking and populating data:", error);
-  }
-};
-
 // Function to fetch and save additional data
 const fetchDataAndSave = async () => {
   try {
-    // const response = await axios.get('https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data');
+    const response = await axios.get("https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data", {
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    });
+
     const oldData = response.data;
 
     const transformedData = await Promise.all(
@@ -152,7 +137,7 @@ const fetchDataAndSave = async () => {
 (async () => {
   try {
     console.log("Starting data fetch and storage...");
-    await fetchAndStoreAllData();
+    await fetchAndStoreAllData(); // Use centralized service
     console.log("Data fetch and storage completed.");
   } catch (error) {
     console.error("Error during data initialization:", error);
@@ -160,8 +145,7 @@ const fetchDataAndSave = async () => {
 })();
 
 // Serve static files
-const publicDir = path.join(__dirname, "routes/public");
-app.use("/public", express.static(publicDir));
+app.use("/public", express.static(path.join(__dirname, "routes/public")));
 
 // Define routes
 app.use("/form1", form1Router);
@@ -188,6 +172,7 @@ app.use("/auth", authRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/access-requests", accessRequestRoutes);
 app.use("/api/region-table", regionTableRoutes);
+app.use("/api/msan-row", msanRowRoutes);
 
 // Start the HTTPS server
 const PORT = process.env.PORT || 8070;
