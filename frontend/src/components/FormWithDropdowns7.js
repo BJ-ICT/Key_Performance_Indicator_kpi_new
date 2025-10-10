@@ -413,7 +413,7 @@ const Form6Table = () => {
   if (loading) return <div className="loader" style={{ color: 'black' }}></div>;
   if (error) return <div className="error-message">{error}</div>;
 
-  // ---------------- UI ----------------
+  // ---------------- UI --
   return (
     <div className="page8-container">
       {/* Dropdowns (now fully dynamic from region table) */}
