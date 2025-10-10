@@ -347,7 +347,7 @@ router.post('/create-super-admin', async (req, res) => {
 //   }
 // });
 
-// Register a new user or puser
+// Register a new user or padmin
 router.post('/register', async (req, res) => {
   const { username, name, pages, role } = req.body;
 
@@ -358,10 +358,10 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Ensure role is either 'user' or 'puser'
-    if (!['user', 'puser'].includes(role)) {
+    // Ensure role is either 'user' or 'padmin'
+    if (!['user', 'padmin'].includes(role)) {
       return res.status(400).json({ 
-        message: 'Invalid role. Role must be either "user" or "puser"' 
+        message: 'Invalid role. Role must be either "user" or "padmin"' 
       });
     }
 
@@ -406,10 +406,10 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Get all users and pusers
+// Get all users and padmins
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({ role: { $in: ['user', 'puser'] } });
+    const users = await User.find({ role: { $in: ['user', 'padmin'] } });
     res.status(200).json({ 
       message: 'Users retrieved successfully', 
       users: users.map(user => ({
@@ -432,14 +432,14 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Get single user or puser by ID
+// Get single user or padmin by ID
 router.get('/users/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
     const user = await User.findById(id);
     
-    if (!user || !['user', 'puser'].includes(user.role)) {
+    if (!user || !['user', 'padmin'].includes(user.role)) {
       return res.status(404).json({ 
         message: 'User not found' 
       });
@@ -467,7 +467,7 @@ router.get('/users/:id', async (req, res) => {
   }
 });
 
-////////////////// Update user or puser details
+////////////////// Update user or padmin details
 router.put('/users/:id', async (req, res) => {
   const { id } = req.params;
   const { username, name, isActive, pages, role } = req.body;
@@ -475,7 +475,7 @@ router.put('/users/:id', async (req, res) => {
   try {
     const user = await User.findById(id);
     
-    if (!user || !['user', 'puser'].includes(user.role)) {
+    if (!user || !['user', 'padmin'].includes(user.role)) {
       return res.status(404).json({ 
         message: 'User not found' 
       });
@@ -493,11 +493,11 @@ router.put('/users/:id', async (req, res) => {
     }
 
     // Update role if provided and valid
-    if (role && ['user', 'puser'].includes(role)) {
+    if (role && ['user', 'padmin'].includes(role)) {
       user.role = role;
     } else if (role) {
       return res.status(400).json({ 
-        message: 'Invalid role. Role must be either "user" or "puser"' 
+        message: 'Invalid role. Role must be either "user" or "padmin"' 
       });
     }
 
@@ -530,14 +530,14 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
-// Delete user or puser
+// Delete user or padmin
 router.delete('/users/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
     const deletedUser = await User.findByIdAndDelete(id);
 
-    if (!deletedUser || !['user', 'puser'].includes(deletedUser.role)) {
+    if (!deletedUser || !['user', 'padmin'].includes(deletedUser.role)) {
       return res.status(404).json({ 
         message: 'User not found' 
       });
@@ -561,7 +561,7 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
-// Update user's or puser's page access
+// Update user's or padmin's page access
 router.patch('/users/:id/pages', async (req, res) => {
   const { id } = req.params;
   const { pages } = req.body;
@@ -574,7 +574,7 @@ router.patch('/users/:id/pages', async (req, res) => {
     }
 
     const user = await User.findById(id);
-    if (!user || !['user', 'puser'].includes(user.role)) {
+    if (!user || !['user', 'padmin'].includes(user.role)) {
       return res.status(404).json({ 
         message: 'User not found' 
       });
@@ -602,13 +602,13 @@ router.patch('/users/:id/pages', async (req, res) => {
   }
 });
 
-// Get user's or puser's page access
+// Get user's or padmin's page access
 router.get('/users/:id/pages', async (req, res) => {
   const { id } = req.params;
 
   try {
     const user = await User.findById(id);
-    if (!user || !['user', 'puser'].includes(user.role)) {
+    if (!user || !['user', 'padmin'].includes(user.role)) {
       return res.status(404).json({ 
         message: 'User not found' 
       });
