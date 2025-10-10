@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import "./FormWithDropdowns1.css";
 import ExcelJS from "exceljs";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Dropdown1() {
   const [role, setRole] = useState([]); // user role
@@ -218,7 +220,7 @@ function Dropdown1() {
   const handleEditClick = (rowId, key) => setEditCell({ rowId, key });
   const handleCancelClick = () => setEditCell({ rowId: null, key: null });
 
-  // ✅ Fixed: updates both flat & nested areas
+  // updates both flat & nested areas
   const handleFieldChange = (e, rowId) => {
     if (!isEditingAllowed) return;
     const { name, value } = e.target;
@@ -251,7 +253,7 @@ function Dropdown1() {
     return Array.from(new Set([...fromMapping, ...fromData, ...fromFlat]));
   }, [data]);
 
-  // ✅ Fixed: saves nested areas properly
+  //  saves nested areas properly
   const handleSaveAll = () => {
     if (!isEditingAllowed) return;
 
@@ -267,15 +269,39 @@ function Dropdown1() {
 
       return axios
         .put(`/form4/update/${item._id}`, filtered)
-        .catch((error) => console.error("Error updating data:", error));
+        .then((res) => ({ ...item, ...filtered }))
+        .catch((error) => {
+          console.error("Error updating data:", error);
+          throw error;
+        });
     });
 
     Promise.all(updatePromises)
-      .then(() => {
+      .then((updatedItems) => {
         setEditCell({ rowId: null, key: null });
-        window.location.reload();
+        setData(updatedItems);
+        toast.success('All changes have been saved successfully!', {
+          position: "top-center",
+          autoClose: 2500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
       })
-      .catch((err) => console.error("Error saving data:", err));
+      .catch((err) => {
+        console.error("Error saving data:", err);
+        toast.error('Failed to save changes. Please try again.', {
+          position: "top-center",
+          autoClose: 2500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      });
   };
 
   // ----- Excel export -----
@@ -340,6 +366,7 @@ function Dropdown1() {
 
   return (
     <div className="page2-container">
+      <ToastContainer />
       {/* Filters */}
       <form onSubmit={(e) => e.preventDefault()} className="filters">
         <div>
@@ -502,10 +529,35 @@ function Dropdown1() {
       </table>
 
       <div style={{ marginTop: 12 }}>
-        <button className="savebtn1" onClick={handleSaveAll}>
+        <button
+          className="savebtn1"
+          onClick={handleSaveAll}
+          style={{
+            background: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            padding: '8px 16px',
+            marginRight: 10,
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
           Save All Changes
         </button>
-        <button className="savebtn1" style={{ marginLeft: 10 }} onClick={generateExcelReport}>
+        <button
+          className="savebtn1"
+          onClick={generateExcelReport}
+          style={{
+            background: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
           Generate Excel Report
         </button>
       </div>
