@@ -166,8 +166,8 @@ const UserManagement = () => {
                 <input
                   type="radio"
                   name="role"
-                  value="puser"
-                  checked={formData.role === 'puser'}
+                  value="padmin"
+                  checked={formData.role === 'padmin'}
                   onChange={handleChange}
                 />
                 Platform Admin
