@@ -33,7 +33,7 @@
     "react-loader-spinner": "^6.1.6",
     "react-router-dom": "^6.26.1",
     "react-scripts": "5.0.1",
-    "react-toastify": "^10.0.5",
+    "react-toastify": "^10.0.6",
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5",
     "xlsx-style": "^0.8.13",
@@ -63,6 +63,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-    
   }
 }
