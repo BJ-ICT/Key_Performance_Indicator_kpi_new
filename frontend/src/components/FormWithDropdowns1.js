@@ -457,7 +457,7 @@ function Dropdown1() {
               {columnsToRender.map((key) => {
                 const isEditing = editCell.rowId === item._id && editCell.key === key;
                 const showEditButton =
-                  role === "puser" && !nonEditableColumns.includes(key) && isEditingAllowed;
+                  role === "padmin" && !nonEditableColumns.includes(key) && isEditingAllowed;
 
                 let rawVal = "-";
                 if (item[key] !== undefined && item[key] !== null && item[key] !== "") {
