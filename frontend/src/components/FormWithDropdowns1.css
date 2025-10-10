@@ -231,4 +231,20 @@
     display: block;
     margin: 10px auto;
   }
+  .Toastify__toast--success {
+  background: #10B981 !important;
+  color: white !important;
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.Toastify__toast--error {
+  background: #E74C3C !important;
+  color: white !important;
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 }

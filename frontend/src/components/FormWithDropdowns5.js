@@ -367,7 +367,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: "flex", alignItems: "center" }}>
                             {entry[type]?.[selectedKey] ?? "-"}
-                            {role === "puser" && isEditingAllowed && (
+                            {role === "padmin" && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -393,13 +393,34 @@ const Form6Table = () => {
         </tbody>
       </table>
 
-      <button className="savebtn1" style={{ marginLeft: "10px" }} onClick={handleSave}>
+      <button
+        className="savebtn1"
+        onClick={handleSave}
+        style={{
+          background: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: 4,
+          padding: '8px 16px',
+          marginRight: 10,
+          cursor: 'pointer',
+          fontWeight: 'bold',
+        }}
+      >
         Save All Changes
       </button>
       <button
         className="savebtn1"
-        style={{ marginLeft: "10px" }}
         onClick={handleExportToExcel}
+        style={{
+          background: '#28a745',
+          color: 'white',
+          border: 'none',
+          borderRadius: 4,
+          padding: '8px 16px',
+          cursor: 'pointer',
+          fontWeight: 'bold',
+        }}
       >
         Export to Excel
       </button>

@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
 import "./FormWithDropdowns4.css";
 import ExcelJS from "exceljs";
@@ -179,7 +181,7 @@ const Form6Table = () => {
   // ---- Edit logic ----
   const handleEditClick = (rowId, key, value) => {
     if (!isEditingAllowed) return;
-    setEditCell({ rowId, key, value });
+    setEditCell({ rowId, key, value: value === undefined || value === null ? "" : String(value) });
   };
 
   const handleInputChange = (e) => {
@@ -223,8 +225,26 @@ const Form6Table = () => {
     try {
       await Promise.all(data.map((entry) => axios.put(`/form6/update/${entry._id}`, entry)));
       fetchData();
+      toast.success('All changes have been saved successfully!', {
+        position: 'top-center',
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } catch (e) {
       console.error("Error saving data:", e);
+      toast.error('Failed to save changes. Please try again.', {
+        position: 'top-center',
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     }
   };
 
@@ -353,6 +373,7 @@ const Form6Table = () => {
 
   return (
     <div className="page5-container">
+      <ToastContainer />
       {/* Filters */}
       <form onSubmit={(e) => e.preventDefault()}>
         <div>
@@ -459,7 +480,7 @@ const Form6Table = () => {
                           <div>
                             <input
                               type="text"
-                              value={editCell.value}
+                              value={editCell.value === undefined || editCell.value === null ? "" : String(editCell.value)}
                               onChange={handleInputChange}
                               autoFocus
                             />
@@ -478,7 +499,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: "flex", alignItems: "center" }}>
                             {entry.unavailable_minutes?.[selectedKey] ?? ""}
-                            {role === "puser" && isEditingAllowed && (
+                            {role === "padmin" && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 style={{ marginLeft: "auto" }}
@@ -509,7 +530,7 @@ const Form6Table = () => {
                           <div>
                             <input
                               type="text"
-                              value={editCell.value}
+                              value={editCell.value === undefined || editCell.value === null ? "" : String(editCell.value)}
                               onChange={handleInputChange}
                               autoFocus
                             />
@@ -528,7 +549,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: "flex", alignItems: "center" }}>
                             {entry.total_minutes?.[selectedKey] ?? ""}
-                            {role === "puser" && isEditingAllowed && (
+                            {role === "padmin" && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 style={{ marginLeft: "auto" }}
@@ -559,7 +580,7 @@ const Form6Table = () => {
                           <div>
                             <input
                               type="text"
-                              value={editCell.value}
+                              value={editCell.value === undefined || editCell.value === null ? "" : String(editCell.value)}
                               onChange={handleInputChange}
                               autoFocus
                             />
@@ -578,7 +599,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: "flex", alignItems: "center" }}>
                             {entry.total_nodes?.[selectedKey] ?? ""}
-                            {role === "puser" && isEditingAllowed && (
+                            {role === "padmin" && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 style={{ marginLeft: "auto" }}
@@ -605,10 +626,35 @@ const Form6Table = () => {
         </tbody>
       </table>
 
-      <button className="savebtn1" onClick={handleSave}>
+      <button
+        className="savebtn1"
+        onClick={handleSave}
+        style={{
+          background: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: 4,
+          padding: '8px 16px',
+          marginRight: 10,
+          cursor: 'pointer',
+          fontWeight: 'bold',
+        }}
+      >
         Save All Changes
       </button>
-      <button className="savebtn1" style={{ marginLeft: 10 }} onClick={handleExportToExcel}>
+      <button
+        className="savebtn1"
+        onClick={handleExportToExcel}
+        style={{
+          background: '#28a745',
+          color: 'white',
+          border: 'none',
+          borderRadius: 4,
+          padding: '8px 16px',
+          cursor: 'pointer',
+          fontWeight: 'bold',
+        }}
+      >
         Export to Excel
       </button>
     </div>

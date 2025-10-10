@@ -233,8 +233,10 @@ const Form6Table = () => {
       });
       await Promise.all(updatePromises);
       fetchData();
+      window.alert('All changes have been saved successfully!');
     } catch (err) {
       console.error('Error saving data:', err);
+      window.alert('Failed to save changes. Please try again.');
     }
   };
 
@@ -549,7 +551,7 @@ const Form6Table = () => {
                               const computed = 24 * 60 * daysInMonth * nodes;
                               return manual !== 0 ? manual : computed;
                             })()}
-                            {role === 'puser' && isEditingAllowed && (
+                            {role === 'padmin' && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -599,7 +601,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             {entry.unavailable_minutes?.[selectedKey] ?? ''}
-                            {role === 'puser' && isEditingAllowed && (
+                            {role === 'padmin' && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -654,7 +656,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             {entry.total_nodes?.[selectedKey] ?? ''}
-                            {role === 'puser' && isEditingAllowed && (
+                            {role === 'padmin' && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -709,7 +711,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             {entry.Total_Failed_Links?.[selectedKey] ?? ''}
-                            {role === 'puser' && isEditingAllowed && (
+                            {role === 'padmin' && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -764,7 +766,7 @@ const Form6Table = () => {
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             {entry.Links_SLA_Not_Violated?.[selectedKey] ?? ''}
-                            {role === 'puser' && isEditingAllowed && (
+                            {role === 'padmin' && isEditingAllowed && (
                               <button
                                 className="table-button"
                                 onClick={() =>
@@ -801,6 +803,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
+          backgroundColor: '#2563eb', 
         }}
         onClick={handleSave}
       >
@@ -817,6 +820,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
+          backgroundColor: '#28a745', 
         }}
       >
         Export to Excel

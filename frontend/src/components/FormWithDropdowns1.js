@@ -10,27 +10,26 @@ function Dropdown1() {
   const [role, setRole] = useState([]); // user role
   const [data, setData] = useState([]); // table rows
   const [regionTable, setRegionTable] = useState([]); // hierarchy for filters
-
   const [editCell, setEditCell] = useState({ rowId: null, key: null });
   const [popupMessage, setPopupMessage] = useState("");
 
   const [formValues, setFormValues] = useState({
-    dropdown1: "", // Region
-    dropdown2: "", // Province
-    dropdown3: "", // Network Engineer
-    dropdown4: "", // LEA / RTOM Area
+    dropdown1: "",
+    dropdown2: "",
+    dropdown3: "",
+    dropdown4: "",
   });
 
-  const [dropdown2Options, setDropdown2Options] = useState([]); // provinces
-  const [dropdown3Options, setDropdown3Options] = useState([]); // engineers
-  const [dropdown4Options, setDropdown4Options] = useState([]); // leas
+  const [dropdown2Options, setDropdown2Options] = useState([]);
+  const [dropdown3Options, setDropdown3Options] = useState([]);
+  const [dropdown4Options, setDropdown4Options] = useState([]);
 
-  const [visibleColumns, setVisibleColumns] = useState([]); // base + selected LEA column
+  const [visibleColumns, setVisibleColumns] = useState([]);
   const [isEditingAllowed, setIsEditingAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ----- constants / helpers -----
+  // ----- constants -----
   const nonEditableColumns = [
     "no",
     "kpi",
@@ -67,7 +66,6 @@ function Dropdown1() {
     datasources: "Data Sources",
   };
 
-  // Friendly display names for LEA keys
   const optionMapping = {
     CENHKMD: "CEN/HK/MD",
     CENHKMD1: "CEN/HK/MD",
@@ -98,7 +96,7 @@ function Dropdown1() {
     return s.trim().endsWith("%") ? s : `${s}%`;
   };
 
-  const checkEditPermission = () => true; // always allow (for testing)
+  const checkEditPermission = () => true;
 
   // ----- fetch data -----
   useEffect(() => {
@@ -220,7 +218,6 @@ function Dropdown1() {
   const handleEditClick = (rowId, key) => setEditCell({ rowId, key });
   const handleCancelClick = () => setEditCell({ rowId: null, key: null });
 
-  // updates both flat & nested areas
   const handleFieldChange = (e, rowId) => {
     if (!isEditingAllowed) return;
     const { name, value } = e.target;
@@ -253,13 +250,12 @@ function Dropdown1() {
     return Array.from(new Set([...fromMapping, ...fromData, ...fromFlat]));
   }, [data]);
 
-  //  saves nested areas properly
+  // ----- save all -----
   const handleSaveAll = () => {
     if (!isEditingAllowed) return;
 
     const updatePromises = data.map((item) => {
       const filtered = { areas: { ...(item.areas || {}) } };
-
       areaKeys.forEach((k) => {
         if (item[k] !== undefined && item[k] !== null) {
           filtered[k] = item[k];
@@ -280,26 +276,26 @@ function Dropdown1() {
       .then((updatedItems) => {
         setEditCell({ rowId: null, key: null });
         setData(updatedItems);
-        toast.success('All changes have been saved successfully!', {
-          position: "top-center",
+        toast.success("✅ All changes have been saved successfully!", {
+          position: "top-right",
           autoClose: 2500,
-          hideProgressBar: false,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
+          theme: "colored",
         });
       })
       .catch((err) => {
         console.error("Error saving data:", err);
-        toast.error('Failed to save changes. Please try again.', {
-          position: "top-center",
+        toast.error("❌ Failed to save changes. Please try again.", {
+          position: "top-right",
           autoClose: 2500,
-          hideProgressBar: false,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
+          theme: "colored",
         });
       });
   };
@@ -366,8 +362,6 @@ function Dropdown1() {
 
   return (
     <div className="page2-container">
-      <ToastContainer />
-      {/* Filters */}
       <form onSubmit={(e) => e.preventDefault()} className="filters">
         <div>
           <label htmlFor="dropdown1">R-GM:</label>
@@ -438,7 +432,6 @@ function Dropdown1() {
         </div>
       </form>
 
-      {/* Table */}
       <h1 className="h1name">
         KPI (Enterprise/ SME and Whole Sales Service Delivery - Fiber)
       </h1>
@@ -477,12 +470,13 @@ function Dropdown1() {
                           type="text"
                           name={key}
                           value={(() => {
-                            // Show the correct previous value for both flat and nested area keys
-                            if (item[key] !== undefined && item[key] !== null && item[key] !== "") return item[key];
+                            if (item[key] !== undefined && item[key] !== null && item[key] !== "")
+                              return item[key];
                             if (item.areas && typeof item.areas === "object") {
                               const normalizedKey = key.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
                               if (item.areas[key] !== undefined) return item.areas[key];
-                              if (item.areas[normalizedKey] !== undefined) return item.areas[normalizedKey];
+                              if (item.areas[normalizedKey] !== undefined)
+                                return item.areas[normalizedKey];
                             }
                             return "";
                           })()}
@@ -533,14 +527,14 @@ function Dropdown1() {
           className="savebtn1"
           onClick={handleSaveAll}
           style={{
-            background: '#2563eb',
-            color: 'white',
-            border: 'none',
+            background: "#2563eb",
+            color: "white",
+            border: "none",
             borderRadius: 4,
-            padding: '8px 16px',
+            padding: "8px 16px",
             marginRight: 10,
-            cursor: 'pointer',
-            fontWeight: 'bold',
+            cursor: "pointer",
+            fontWeight: "bold",
           }}
         >
           Save All Changes
@@ -549,20 +543,28 @@ function Dropdown1() {
           className="savebtn1"
           onClick={generateExcelReport}
           style={{
-            background: '#28a745',
-            color: 'white',
-            border: 'none',
+            background: "#10B981",
+            color: "white",
+            border: "none",
             borderRadius: 4,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
+            padding: "8px 16px",
+            cursor: "pointer",
+            fontWeight: "bold",
           }}
         >
           Generate Excel Report
         </button>
       </div>
 
-      {popupMessage && <div className="popup-message">{popupMessage}</div>}
+      <ToastContainer
+        position="top-right"
+        autoClose={2500}
+        hideProgressBar
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </div>
   );
 }
