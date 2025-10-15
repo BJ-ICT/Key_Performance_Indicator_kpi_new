@@ -7,9 +7,8 @@ import "react-circular-progressbar/dist/styles.css";
 import { motion } from "framer-motion";
 
 
-// ==============================
 // Helpers
-// ==============================
+
 
 const baseMeter = (col) => String(col || "").replace(/-\d+$/, "");
 const normalizeEngineer = (str = "") => String(str).split("(")[0].trim();
@@ -56,9 +55,7 @@ function readRow12FromLocalStorage() {
 // Removed remote fetch for Row-12: relying exclusively on localStorage (written by FinalTables component).
 
 
-// ==============================
 // Dashboard Component
-// ==============================
 
 export default function Dashboard() {
   const [regions, setRegions] = useState([]);
@@ -94,7 +91,7 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 20; // up to ~20 seconds
+    const maxAttempts = 20; // up to ~ 20 seconds
     const tryLoad = () => {
       if (cancelled) return;
       const ls = readRow12FromLocalStorage();
