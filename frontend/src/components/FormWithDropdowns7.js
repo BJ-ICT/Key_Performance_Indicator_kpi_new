@@ -453,7 +453,7 @@ const Form6Table = () => {
           <select name="dropdown4" value={formValues.dropdown4} onChange={handleDropdownChange} disabled={!formValues.dropdown3}>
             <option value="">Select RTOM</option>
             {dropdown4Options.map((opt) => (
-              <option key={opt} value={opt}>
+              <option key={opt} value={normalizeKey(opt)}>
                 {/* If your LEA is already a code like 'ngivt', you can map to label for readability */}
                 {optionMapping[normalizeKey(opt)] || opt}
               </option>
@@ -803,7 +803,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          backgroundColor: '#2563eb', 
+          backgroundColor: '#2563eb',
         }}
         onClick={handleSave}
       >
@@ -820,7 +820,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          backgroundColor: '#28a745', 
+          backgroundColor: '#28a745',
         }}
       >
         Export to Excel

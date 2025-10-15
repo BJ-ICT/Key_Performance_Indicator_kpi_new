@@ -1,3 +1,4 @@
+// frontend/src/components/FormWithDropdowns1.js
 import axios from "axios";
 import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
@@ -23,7 +24,6 @@ function Dropdown1() {
   const [dropdown2Options, setDropdown2Options] = useState([]);
   const [dropdown3Options, setDropdown3Options] = useState([]);
   const [dropdown4Options, setDropdown4Options] = useState([]);
-
   const [visibleColumns, setVisibleColumns] = useState([]);
   const [isEditingAllowed, setIsEditingAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -66,6 +66,7 @@ function Dropdown1() {
     datasources: "Data Sources",
   };
 
+  // --- option mapping (with EMBHBMH alias fix) ---
   const optionMapping = {
     CENHKMD: "CEN/HK/MD",
     CENHKMD1: "CEN/HK/MD",
@@ -82,6 +83,7 @@ function Dropdown1() {
     BDBWMRG: "BD/BW/MRG",
     KERN: "KE/RN",
     EMBHBMH: "EMB/HB/MH",
+    EBMHMBH: "EMB/HB/MH", // alias fix
     AGGL: "AG/GL",
     HRKTPH: "HR/KT/PH",
     BCAPKLTC: "BC/AP/KL/TC",
@@ -121,7 +123,19 @@ function Dropdown1() {
     setLoading(true);
     axios
       .get("/form4")
-      .then((response) => setData(response.data))
+      .then((response) => {
+        // normalize areas (merge "GQ / KI / NTB" → "GQKINTB")
+        const normalized = response.data.map((row) => ({
+          ...row,
+          areas: Object.fromEntries(
+            Object.entries(row.areas || {}).map(([k, v]) => [
+              k.replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
+              v,
+            ])
+          ),
+        }));
+        setData(normalized);
+      })
       .catch(() => setError("Failed to load table data. Please try again later."))
       .finally(() => setLoading(false));
   }, []);
@@ -171,10 +185,13 @@ function Dropdown1() {
               x.networkEngineer === engineer
           )
           .map((x) => {
+            const normalized = x.lea.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
             const dbKey = Object.keys(optionMapping).find(
-              (key) => optionMapping[key] === x.lea || key === x.lea
+              (key) =>
+                optionMapping[key].replace(/[^A-Za-z0-9]/g, "").toUpperCase() === normalized ||
+                key === normalized
             );
-            return dbKey || x.lea;
+            return dbKey || normalized;
           })
       )
     ).filter(Boolean);
@@ -227,7 +244,10 @@ function Dropdown1() {
         const updatedItem = { ...item };
         updatedItem[name] = value;
         if (updatedItem.areas && typeof updatedItem.areas === "object") {
-          updatedItem.areas = { ...updatedItem.areas, [name]: parseFloat(value) || 0 };
+          updatedItem.areas = {
+            ...updatedItem.areas,
+            [name.replace(/[^A-Za-z0-9]/g, "").toUpperCase()]: parseFloat(value) || 0,
+          };
         }
         return updatedItem;
       })
@@ -280,9 +300,6 @@ function Dropdown1() {
           position: "top-right",
           autoClose: 2500,
           hideProgressBar: true,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "colored",
         });
       })
@@ -292,9 +309,6 @@ function Dropdown1() {
           position: "top-right",
           autoClose: 2500,
           hideProgressBar: true,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           theme: "colored",
         });
       });
@@ -362,6 +376,7 @@ function Dropdown1() {
 
   return (
     <div className="page2-container">
+      {/* Filter Form */}
       <form onSubmit={(e) => e.preventDefault()} className="filters">
         <div>
           <label htmlFor="dropdown1">R-GM:</label>
@@ -451,7 +466,6 @@ function Dropdown1() {
                 const isEditing = editCell.rowId === item._id && editCell.key === key;
                 const showEditButton =
                   role === "padmin" && !nonEditableColumns.includes(key) && isEditingAllowed;
-
                 let rawVal = "-";
                 if (item[key] !== undefined && item[key] !== null && item[key] !== "") {
                   rawVal = item[key];
@@ -469,19 +483,16 @@ function Dropdown1() {
                         <input
                           type="text"
                           name={key}
-                          value={(() => {
-                            if (item[key] !== undefined && item[key] !== null && item[key] !== "")
-                              return item[key];
-                            if (item.areas && typeof item.areas === "object") {
-                              const normalizedKey = key.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-                              if (item.areas[key] !== undefined) return item.areas[key];
-                              if (item.areas[normalizedKey] !== undefined)
-                                return item.areas[normalizedKey];
-                            }
-                            return "";
-                          })()}
+                          value={
+                            item[key] ||
+                            (item.areas &&
+                              (item.areas[key] ||
+                                item.areas[key.replace(/[^A-Za-z0-9]/g, "").toUpperCase()])) ||
+                            ""
+                          }
                           onChange={(e) => handleFieldChange(e, item._id)}
                           autoFocus
+
                         />
                         <button
                           className="table-button"
@@ -568,4 +579,5 @@ function Dropdown1() {
     </div>
   );
 }
+
 export default Dropdown1;
