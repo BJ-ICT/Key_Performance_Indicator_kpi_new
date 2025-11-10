@@ -2,19 +2,17 @@
 .final-tables-container {
     background-size: cover;
     background-position: center;
-    min-height: 100vh;
+    min-height: calc(100vh - 70px - 50px); /* Account for navbar (70px) and footer (50px estimated) */
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 50px 0 0;
-    padding: 20px;
+    margin: 0;
+    padding-top: 90px; /* Navbar height (70px) + spacing (20px) */
+    padding-bottom: 70px; /* Footer height + spacing */
+    padding-left: 20px;
+    padding-right: 20px;
     width: 100%;
-}
-.final-tables-title{
-    margin-bottom: 30px;
-    text-align: center;
-    margin-top: 40px;
-    width: 600px;
+    box-sizing: border-box;
 }
 /*  R-GM ,P-DGM	and NW EE / RTOM AREA	colSpan style */
 .colSpan-header th {
@@ -26,40 +24,69 @@
     background-color: #f9fafb; /* subtle light gray */
     text-align: right; /* if you want it right-aligned */
 }
-.final-tables-title {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-}
-
 
 /* Title styles */
 .final-tables-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     color: #333;
-    font-weight: bold;
     font-size: 24px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    margin-top: 0;
     text-align: center;
-    margin-top: 40px;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
-/* Side-by-side layout container */
+/* Container for both tables side by side */
 .side-by-side-tables {
     display: flex;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    gap: 0;
+    align-items: flex-start;
+    position: relative;
+    /* Let the container handle vertical scroll for both tables together */
+    overflow-y: auto;
+    /* Do not clip horizontal content; the right wrapper will manage X scroll */
+    overflow-x: visible;
+    max-height: 93vh;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #fff;
+    box-sizing: border-box;
 }
 
-/* Table containers */
-.side-by-side-tables .final-table-container,
-.side-by-side-tables .kpi-table-container {
+/* Left table: fixed width, no horizontal scroll */
+.kpi-table-wrapper {
+    flex-shrink: 0;
+    width: 650px; /* Fixed width for alignment */
+    min-width: 1110px;
+    max-width: 650px;
+    overflow: visible;
+    position: relative; /* avoid overlaying the right table */
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    align-self: flex-start;
+}
+
+/* Right table: scrollable horizontally */
+.final-table-wrapper {
     flex: 1;
-    min-width: fit-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    position: relative;
+    background: #fff;
 }
 
-/* Remove the padding top from KPI table */
-.side-by-side-tables .kpi-table-container {
+/* Ensure the right table uses intrinsic width so it can scroll horizontally */
+.final-table-container .final-distribution-table {
+    width: max-content;
+}
+
+/* Remove padding top from KPI table */
+.kpi-table-container {
     padding-top: 0px;
 }
 
@@ -107,7 +134,7 @@
     padding: 10px;
     font-size: 13px;
     border: 1px solid #0f0f0f; 
-    height: 60px;
+    height: 50px;
     line-height: 40px;
     white-space: nowrap;
 }
@@ -154,12 +181,30 @@
     padding: 10px;
 }
 
-/* Ensure both tables are visible */
-.final-table-container,
-.kpi-table-container {
-    display: block;
-    visibility: visible;
-    position: relative;
+/* Responsive adjustments */
+@media screen and (max-width: 1024px) {
+    .kpi-table-wrapper {
+        min-width: 500px;
+        max-width: 550px;
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .side-by-side-tables {
+        flex-direction: column;
+        overflow-y: visible;
+        max-height: none;
+    }
+    .kpi-table-wrapper,
+    .final-table-wrapper {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        position: relative;
+        box-shadow: none;
+        margin-bottom: 20px;
+    }
 }
 
 /* Table cell consistent sizing */
@@ -172,21 +217,10 @@
     white-space: nowrap;
 }
 
-/* _Media query for mobile responsiveness */
-@media screen and (max-width: 768px) {
-    .side-by-side-tables {
-        flex-direction: column;
-    }
-    
-    .side-by-side-tables .final-table-container,
-    .side-by-side-tables .kpi-table-container {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    
-    .final-tables-container {
-        padding: 10px;
-    }
+/* Keep body row heights consistent across both tables for alignment */
+.kpi-table tbody tr,
+.final-distribution-table tbody tr {
+    height: 50px;
 }
 
 /* Loading spinner */
@@ -219,22 +253,6 @@
   transition: transform 0.1s ease;
   z-index: 9999;
 }
-
-.side-by-side-tables {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;          /* ❌ prevent wrapping */
-  overflow-x: auto;           /* ✅ allow horizontal scroll on mobile */
-  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
-  align-items: flex-start;    /* keep aligned to top */
-}
-
-.kpi-table-container,
-.final-table-container {
-  flex-shrink: 0;             /* ❌ prevent shrinking */
-  min-width: 400px;           /* ✅ ensure tables keep a readable width */
-}
-
 
 @keyframes final-tables-spin {
     0% { transform: rotate(0deg); }

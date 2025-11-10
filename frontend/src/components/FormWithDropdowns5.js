@@ -6,9 +6,10 @@ import ExcelJS from "exceljs";
 const Form6Table = () => {
   const [data, setData] = useState([]);
   const [regionData, setRegionData] = useState([]);
-  const [daysInMonth] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-  );
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const [daysInMonth] = useState(new Date(currentYear, now.getMonth() + 1, 0).getDate());
   const [editCell, setEditCell] = useState({ rowId: null, key: null, value: "" });
   const [isEditingAllowed, setIsEditingAllowed] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -32,8 +33,10 @@ const Form6Table = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/form7");
-      setData(res.data);
+      const res = await axios.get("/form7", { params: { year: String(currentYear), month: currentMonth } });
+      const entries = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      const filtered = entries.filter((item) => String(item.year) === String(currentYear) && String(item.month) === currentMonth);
+      setData(filtered);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load table data.");
@@ -108,7 +111,69 @@ const Form6Table = () => {
   // Normalize RTOM key (e.g., "CEN / HK / MD" → "cenhkmd")
   const normalizeKey = (val) => (val ? val.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() : "");
 
-  const selectedKey = normalizeKey(formValues.dropdown4);
+  // Mapping for RTOM code → label (used to match labels like "KON/KX" to stored keys like "konix")
+  const optionMapping = {
+    cenhkmd: 'CEN/HK/MD',
+    cenhkmd1: 'CEN/HK/MD',
+    gqkintb: 'GQ/KI/NTB',
+    ndfrm: 'ND/RM',
+    awho: 'AW/HO',
+    konix: 'KON/KX',
+    ngivt: 'NG/WT',
+    kgkly: 'KG/KLY',
+    cwpx: 'CW/PX',
+    debkymt: 'DB/KY/MT',
+    gphtnw: 'GP/HT/NW',
+    adipr: 'AD/PR',
+    bddwmrg: 'BD/BW/MRG',
+    keirn: 'KE/RN',
+    embmbmh: 'EMB/HB/MH',
+    aggl: 'AG/GL',
+    hrktph: 'HR/KT/PH',
+    bcjrdkltc: 'BC/AP/KL/TC',
+    ja: 'JA',
+    komltmbva: 'KO/MLT/MB/VA',
+  };
+
+  // Resolve the area key robustly: accept either stored keys or human labels and map them
+  // to the canonical stored key used in form data objects.
+  const resolveAreaKey = (val) => {
+    if (!val) return '';
+    const raw = String(val).trim();
+    const normVal = normalizeKey(raw);
+
+    // 1) Direct exact key match
+    if (optionMapping[normVal]) return normVal;
+
+    // 2) If raw equals a key (case-insensitive)
+    for (const key of Object.keys(optionMapping)) {
+      if (key.toLowerCase() === raw.toLowerCase()) return key;
+    }
+
+    // 3) Match against mapping labels (e.g., 'KON/KX' -> 'konix')
+    for (const [key, label] of Object.entries(optionMapping)) {
+      if (!label) continue;
+      if (label.toLowerCase() === raw.toLowerCase() || normalizeKey(label) === normVal) return key;
+    }
+
+    // 4) As a fallback, try matching against keys present in the loaded data (total_minutes / unavailable_minutes)
+    const keyCandidates = new Set();
+    data.forEach((entry) => {
+      if (entry.total_minutes) Object.keys(entry.total_minutes).forEach((k) => keyCandidates.add(k));
+      if (entry.unavailable_minutes) Object.keys(entry.unavailable_minutes).forEach((k) => keyCandidates.add(k));
+      if (entry.total_nodes) Object.keys(entry.total_nodes).forEach((k) => keyCandidates.add(k));
+    });
+    for (const k of keyCandidates) {
+      if (k.toLowerCase() === raw.toLowerCase() || normalizeKey(k) === normVal) return k;
+      // also try matching against mapped label if exists
+      if (optionMapping[k] && (optionMapping[k].toLowerCase() === raw.toLowerCase() || normalizeKey(optionMapping[k]) === normVal)) return k;
+    }
+
+    // 5) Final fallback: return normalized input (may match in some datasets)
+    return normVal;
+  };
+
+  const selectedKey = resolveAreaKey(formValues.dropdown4);
 
   // ------------------ EDITING LOGIC ------------------
   const handleEditClick = (rowId, key, value) => {
@@ -285,7 +350,7 @@ const Form6Table = () => {
             <option value="">Select RTOM</option>
             {leas.map((a) => (
               <option key={a} value={a}>
-                {a}
+                {optionMapping ? (optionMapping[resolveAreaKey(a)] || a) : a}
               </option>
             ))}
           </select>
@@ -304,7 +369,7 @@ const Form6Table = () => {
             <th>Division</th>
             <th>Section</th>
             <th>KPI Percent</th>
-            {selectedKey && <th>{formValues.dropdown4}</th>}
+            {selectedKey && <th>{optionMapping[selectedKey] || formValues.dropdown4}</th>}
           </tr>
         </thead>
         <tbody>

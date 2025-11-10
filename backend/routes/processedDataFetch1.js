@@ -80,7 +80,11 @@ router.post('/ProcessedDataFetch1', async (req, res) => {
 // Endpoint to get processed data
 router.get('/ProcessedDataFetch1', async (req, res) => {
   try {
-    const data = await TableDataModel.find();
+    const { year, month } = req.query;
+    const query = {};
+    if (year) query.year = Number(year);
+    if (month) query.month = month;
+    const data = Object.keys(query).length ? await TableDataModel.find(query) : await TableDataModel.find();
     if (data.length > 0) {
       res.status(200).json(data);
     } else {

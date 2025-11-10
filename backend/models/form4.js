@@ -1,5 +1,7 @@
 // models/form4.js
 import mongoose from "mongoose";
+const currentYear = new Date().getFullYear();
+const form4Collection = `form4_${currentYear}`;
 
 const { Schema } = mongoose;
 
@@ -14,6 +16,9 @@ const form4Schema = new Schema(
     definedoladetails: { type: String, required: false },
     weightage: { type: String, required: false },
     datasources: { type: String, required: false },
+    year:{ type: String, required: false  },
+    month:{ type: String, required: false },
+
 
     /**
      * Dynamic area values.
@@ -34,5 +39,5 @@ const rtomAreaFilter = (data) => {
     return data.filter(item => item.areas.has('RTOM'));
 };
 
-const Form4 = mongoose.model("form4", form4Schema);
+const Form4 = mongoose.model(`Form4_${currentYear}`, form4Schema);
 export default Form4;

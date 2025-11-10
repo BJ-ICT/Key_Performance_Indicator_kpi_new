@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+const currentYear = new Date().getFullYear();  
+const msan="msankpi_"+currentYear;
 
 const msanKpiSchema = new mongoose.Schema(
   {
@@ -9,7 +11,7 @@ const msanKpiSchema = new mongoose.Schema(
     nooffailure: Number,
     kpiacheived: Number,
   },
-  { collection: "msankpi", timestamps: true }
+  { collection: msan, timestamps: true }
 );
 
 const MsanKpi = mongoose.model("MsanKpi", msanKpiSchema);

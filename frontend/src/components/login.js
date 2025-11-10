@@ -23,57 +23,52 @@ const LoginPage = () => {
   }, []);
 
   const handleAzureLogin = async () => {
-    if (!isInitialized) {
-      setError("Microsoft login is not initialized yet. Please try again.");
-      return;
+  if (!isInitialized) {
+    setError("Microsoft login is not initialized yet. Please try again.");
+    return;
+  }
+
+  try {
+    // Use popup login instead of redirect
+    const loginResponse = await msalInstance.loginPopup({
+      scopes: ["User.Read"],
+      prompt: "select_account",
+    });
+
+    // Set active account
+    if (loginResponse?.account) {
+      msalInstance.setActiveAccount(loginResponse.account);
     }
 
-    try {
-      // Trigger Microsoft login
-      const loginResponse = await msalInstance.loginPopup({
-        scopes: ["User.Read"], // Replace with the scopes your app requires
-        prompt: "select_account",
-      });
+    const email = loginResponse.account.username;
+    const username = email.substring(0, 6); // extract username
 
-      // Set active account so logout uses the correct account
-      if (loginResponse?.account) {
-        msalInstance.setActiveAccount(loginResponse.account);
-      }
+    // Send username to backend
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
 
-      const email = loginResponse.account.username; // Get the user's email
-      const username = email.substring(0, 6); // Extract username from email
+    const data = await response.json();
 
-      // Send only the username to the backend
-      //const response = await fetch('https://localhost:8070/auth/login', {
-      const response = await fetch("/auth/login", {
-        //'https://localhost:8070/auth/login', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username }),
-      });
+    if (response.ok) {
+      localStorage.setItem("userData", JSON.stringify(data.user));
+      localStorage.setItem("name", data.user.name);
+      localStorage.setItem("token", data.token);
+      setSuccess("Login successful");
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Save user data
-        localStorage.setItem("userData", JSON.stringify(data.user));
-        localStorage.setItem("name", data.user.name);
-        localStorage.setItem("token", data.token); // Ensure the token is stored
-
-        setSuccess("Login successful");
-        setTimeout(() => {
-          window.location.href = "/home";
-        }, 1500);
-      } else {
-        setError(data.message || "Login failed");
-      }
-    } catch (err) {
-      setError("An error occurred during Azure login-" + err.message);
-      console.error("Azure login error:", err.message);
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 1500);
+    } else {
+      setError(data.message || "Login failed");
     }
-  };
+  } catch (err) {
+    setError("An error occurred during Azure login - " + err.message);
+    console.error("Azure login error:", err.message);
+  }
+};
 
   /*return (
     <div style={styles.container}>

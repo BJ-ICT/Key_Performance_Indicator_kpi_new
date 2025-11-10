@@ -39,6 +39,7 @@ import emailRoutes from "./routes/emailRoutes.js";
 import accessRequestRoutes from "./routes/accessRequestRoutes.js";
 import msanRowRoutes from "./routes/msan-row.js";
 import regionTableRoutes from "./routes/regionTableRoutes.js";
+import periodsRoutes from "./routes/periods.js";
 
 // Load environment variables
 dotenv.config();
@@ -48,8 +49,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // SSL certificate paths
-const sslKeyPath = path.resolve(__dirname, "./ssl/socapplications.key");
-const sslCertPath = path.resolve(__dirname, "./ssl/socapplications.crt");
+const sslKeyPath = path.resolve(__dirname, "./ssl/socapp.key");
+const sslCertPath = path.resolve(__dirname, "./ssl/socapp.cer");
 
 // Read SSL certificate files
 const sslOptions = {
@@ -63,7 +64,8 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
-
+// import form9Router from "./routes/form9.js";
+// app.use("/form9", form9Router);
 // MongoDB connection
 (async () => {
   try {
@@ -78,9 +80,9 @@ app.use(cors());
 // Function to fetch and save additional data
 const fetchDataAndSave = async () => {
   try {
-    const response = await axios.get("https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data", {
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-    });
+    // const response = await axios.get("https://socapplications.intranet.slt.com.lk:8070/data-fetch1/data", {
+    //   httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    // });
 
     const oldData = response.data;
 
@@ -173,6 +175,7 @@ app.use("/api/emails", emailRoutes);
 app.use("/api/access-requests", accessRequestRoutes);
 app.use("/api/region-table", regionTableRoutes);
 app.use("/api/msan-row", msanRowRoutes);
+app.use("/api", periodsRoutes);
 
 // Start the HTTPS server
 const PORT = process.env.PORT || 8070;

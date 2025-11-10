@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+const currentYear = new Date().getFullYear();
+const form8Collection = `form8_${currentYear}`;
+
 // Define the schema for sub-rows
 const subRowSchema = new mongoose.Schema({
   cenhkmd: { type: String },     // No default values, will store provided values or leave undefined
@@ -33,10 +36,18 @@ const form8Schema = new mongoose.Schema({
   kpi_percent: { type: Number, required: false  },          // Field for 'kpi_percent' is required
   unavailable_minutes: subRowSchema,                      // Sub-row for unavailable_minutes
   total_minutes: subRowSchema,                            // Sub-row for total_minutes
-  total_nodes: subRowSchema                               // Sub-row for total_nodes
-});
+  total_nodes: subRowSchema,                               // Sub-row for total_nodes
+  year:{ type: String, required: false  },
+  month:{ type: String, required: false  },
+},
+{ 
+    collection: form8Collection, // Dynamic collection name
+    timestamps: true             // ✅ Enables createdAt and updatedAt
+  }
+);
 
 // Create the model from the schema
-const Form8 = mongoose.model("Form8", form8Schema);
+
+const Form8 = mongoose.model(`Form8_${currentYear}`, form8Schema);
 
 export default Form8;

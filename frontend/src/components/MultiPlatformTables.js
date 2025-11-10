@@ -15,7 +15,7 @@ const MultiPlatformTables = () => {
   const [error, setError] = useState(null); // Error state
 
   const columns = [
-    'NW/WPC','NW/WPNE','NW/WPSW','NW/WPSE','NW/WPE','NW/WPN','NW/NWPE','NW/NWPW',
+    'NW/WPC-1','NW/WPC-2','NW/WPNE','NW/WPSW','NW/WPSE','NW/WPE','NW/WPN','NW/NWPE','NW/NWPW',
     'NW/CPN','NW/CPS','NW/NCP','NW/UVA','NW/SAB','NW/SPE','NW/SPW','NW/WPS',
     'NW/EP','NW/NP-1','NW/NP-2'
   ];

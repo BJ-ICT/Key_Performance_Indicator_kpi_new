@@ -65,9 +65,17 @@ const Form6Table = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [res8, res9] = await Promise.all([axios.get('/form8'), axios.get('/form9')]);
-      const enrichedForm8 = (res8.data || []).map((e) => ({ ...e, formType: 'form8' }));
-      const enrichedForm9 = (res9.data || []).map((e) => ({ ...e, formType: 'form9' }));
+      const [res8, res9] = await Promise.all([
+        axios.get('/form8', { params: { year: "2025", month: "11" }}),
+        axios.get('/form9', { params: { year: "2025", month: "11" }})
+      ]);
+      // Filter data for current month (November 2025)
+      const enrichedForm8 = (res8.data || [])
+        .filter(item => item.Year === "2025" && item.Month === "11")
+        .map((e) => ({ ...e, formType: 'form8' }));
+      const enrichedForm9 = (res9.data || [])
+        .filter(item => item.Year === "2025" && item.Month === "11")
+        .map((e) => ({ ...e, formType: 'form9' }));
       setForm8Data(enrichedForm8);
       setForm9Data(enrichedForm9);
     } catch (err) {
@@ -143,8 +151,31 @@ const Form6Table = () => {
   // Normalize key for RTOM area if needed (kept from your dynamic example)
   const normalizeKey = (val) =>
     val ? String(val).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
+  // Robust resolver: match the dropdown value to the actual key used in stored data.
+  // This allows labels like "KON/KX" or keys like "konix" to both map to the stored key.
+  const resolveAreaKey = (val) => {
+    if (!val) return '';
+    const raw = String(val).trim();
+    const normVal = normalizeKey(raw);
+
+    // Try direct matches against known optionMapping keys first
+    for (const key of Object.keys(optionMapping)) {
+      if (key === raw || key === raw.toLowerCase() || key === normVal) return key;
+    }
+
+    // Try matching against mapped labels (optionMapping values)
+    for (const [key, label] of Object.entries(optionMapping)) {
+      if (!label) continue;
+      const normLabel = normalizeKey(label);
+      if (label.toLowerCase() === raw.toLowerCase() || normLabel === normVal) return key;
+    }
+
+    // Fallback: return normalized input (may match stored key naming in some cases)
+    return normVal;
+  };
+
   const selectedKeyRaw = formValues.dropdown4 || '';
-  const selectedKey = normalizeKey(selectedKeyRaw); // e.g., "CEN / HK / MD" -> "cenhkmd"
+  const selectedKey = resolveAreaKey(selectedKeyRaw);
 
   // ---------------- KPI Calculations ----------------
   const calculatePercentageForm8 = (totalMinutes, unavailableMinutes, totalNodes) => {
@@ -454,8 +485,8 @@ const Form6Table = () => {
             <option value="">Select RTOM</option>
             {dropdown4Options.map((opt) => (
               <option key={opt} value={opt}>
-                {/* If your LEA is already a code like 'ngivt', you can map to label for readability */}
-                {optionMapping[normalizeKey(opt)] || opt}
+                {/* Map option value to the canonical key then to a human label when possible */}
+                {optionMapping[resolveAreaKey(opt)] || opt}
               </option>
             ))}
           </select>

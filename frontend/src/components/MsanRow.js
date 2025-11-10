@@ -34,33 +34,6 @@ function pickNumber(obj, keys, fallback = 0) {
   return fallback;
 }
 
-function chooseLatestDetails(list) {
-  if (!Array.isArray(list)) return [];
-  // Prefer the most recent item that has a non-empty details array.
-  const withDetails = list.filter(
-    (x) => Array.isArray(x?.details) && x.details.length > 0
-  );
-  if (!withDetails.length) return [];
-
-  // Try to use Year/Month if present; else fallback to createdAt; else last in array.
-  const now = new Date();
-  const y = now.getFullYear().toString();
-  const m = (now.getMonth() + 1).toString(); // "1".."12"
-
-  const exact = withDetails.find(
-    (x) => (x.Year?.toString?.() === y) && (x.Month?.toString?.() === m)
-  );
-  if (exact) return exact.details;
-
-  // sort by createdAt if available
-  withDetails.sort((a, b) => {
-    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return tb - ta;
-  });
-  return withDetails[0].details;
-}
-
 const MsanRow = ({ columns, columnsAchievedRef, row3Weightage }) => {
   const [details, setDetails] = useState([]);
 
@@ -68,8 +41,34 @@ const MsanRow = ({ columns, columnsAchievedRef, row3Weightage }) => {
     (async () => {
       try {
         const res = await axios.get("/api/msan-row");
-        const chosen = chooseLatestDetails(res?.data || []);
-        setDetails(Array.isArray(chosen) ? chosen : []);
+        const data = res?.data || [];
+        
+        // Filter valid records
+        const validRecords = data.filter(
+          (x) => x && x.Designation && x.nooffailure !== undefined && x.kpiacheived !== undefined
+        );
+        
+        if (!validRecords.length) {
+          console.warn("⚠️ No valid MSAN records found in response");
+          setDetails([]);
+          return;
+        }
+
+        // Try to use current Year/Month if present
+        const now = new Date();
+        const y = now.getFullYear().toString();
+        const m = (now.getMonth() + 1).toString();
+
+        const exact = validRecords.find(
+          (x) => (x.Year?.toString?.() === y) && (x.Month?.toString?.() === m)
+        );
+        
+        // If exact match found, get all records from that month; otherwise use all valid records
+        const recordsToUse = exact 
+          ? validRecords.filter((x) => (x.Year?.toString?.() === y) && (x.Month?.toString?.() === m))
+          : validRecords;
+        
+        setDetails(recordsToUse);
       } catch (err) {
         console.error("❌ Error fetching MSAN row data:", err);
         setDetails([]);
@@ -82,7 +81,7 @@ const MsanRow = ({ columns, columnsAchievedRef, row3Weightage }) => {
       <tr>
         {columns.map((_, i) => (
           <React.Fragment key={`no-msan-${i}`}>
-            <td style={{ textAlign: "center", color: "red" }}>No MSAN Data</td>
+            <td style={{ textAlign: "center", color: "red" }}>-</td>
             <td></td>
           </React.Fragment>
         ))}

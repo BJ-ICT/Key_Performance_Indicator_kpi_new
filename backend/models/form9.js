@@ -1,8 +1,12 @@
 import mongoose from "mongoose";
 
+// Get current year for dynamic collection naming
+const currentYear = new Date().getFullYear();
+const form9Collection = `form9_${currentYear}`;
+
 // Define the schema for sub-rows
 const subRowSchema = new mongoose.Schema({
-  cenhkmd: { type: String },     // No default values, will store provided values or leave undefined
+  cenhkmd: { type: String },
   cenhkmd1: { type: String },
   gqkintb: { type: String },
   ndfrm: { type: String },
@@ -25,18 +29,25 @@ const subRowSchema = new mongoose.Schema({
 });
 
 // Define the main form schema
-const form9Schema = new mongoose.Schema({
-  no: { type: Number, required: false },                  // Field for 'no' is required
-  network_engineer_kpi: { type: String, required: false  }, // Field for 'network_engineer_kpi' is required
-  division: { type: String, required: false  },             // Field for 'division' is required
-  section: { type: String, required: false  },              // Field for 'section' is required
-  kpi_percent: { type: Number, required: false  },          // Field for 'kpi_percent' is required
-  Total_Failed_Links: subRowSchema,                      // Sub-row for Total_Failed_Links
-  Links_SLA_Not_Violated: subRowSchema                            // Sub-row for Links_SLA_Not_Violated
-                            
-});
+const form9Schema = new mongoose.Schema(
+  {
+    no: { type: Number, required: false },
+    network_engineer_kpi: { type: String, required: false },
+    division: { type: String, required: false },
+    section: { type: String, required: false },
+    kpi_percent: { type: Number, required: false },
+    Total_Failed_Links: subRowSchema,
+    Links_SLA_Not_Violated: subRowSchema,
+    year: { type: String, required: false },
+    month: { type: Number, required: false }
+  },
+  { 
+    collection: form9Collection, // Dynamic collection name
+    timestamps: true             // ✅ Enables createdAt and updatedAt
+  }
+);
 
-// Create the model from the schema
-const Form9 = mongoose.model("Form9", form9Schema);
+// ✅ Dynamic model name to prevent model caching issues
+const Form9 = mongoose.model(`Form9_${currentYear}`, form9Schema);
 
 export default Form9;

@@ -1,11 +1,16 @@
 import express from 'express';
 import Form9 from '../models/form9.js'; // Import the model
+console.log("✅ Form9 router loaded");
+
 
 const router = express.Router();
 
 // Create a new form9 entry
 router.post('/add', async (req, res) => {
-  const { no, network_engineer_kpi, division, section, kpi_percent, Total_Failed_Links, Links_SLA_Not_Violated } = req.body;
+  console.log("✅ POST /form9/add hit!");
+    res.send("Form9 route working");
+  
+  const { no, network_engineer_kpi, division, section, kpi_percent, Total_Failed_Links, Links_SLA_Not_Violated, year, month } = req.body;
 
   try {
     // Create new Form9 entry with sub-row values
@@ -16,7 +21,10 @@ router.post('/add', async (req, res) => {
       section,
       kpi_percent,
       Total_Failed_Links: Total_Failed_Links || {}, // Use provided or default to empty
-      Links_SLA_Not_Violated: Links_SLA_Not_Violated || {} // Use provided or default to empty
+      Links_SLA_Not_Violated: Links_SLA_Not_Violated || {}, // Use provided or default to empty
+      year,
+      month
+
       
     });
 
@@ -25,6 +33,8 @@ router.post('/add', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to create Form9 entry', error });
   }
+
+    
 });
 
 // Get all form9 entries
@@ -47,6 +57,29 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch Form9 entry', error });
   }
 });
+
+// Get the latest Form9 entry (based on date)
+router.get('/latest', async (req, res) => {
+  try {
+    const latestEntry = await Form9.findOne().sort({ createdAt: -1 }); // Sort newest first
+    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
+
+    // Extract date & month
+    const createdAt = latestEntry.createdAt;
+    const latestDate = createdAt.getDate();
+    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
+
+    res.status(200).json({
+      message: 'Latest Form9 entry retrieved successfully',
+      latestDate,
+      latestMonth,
+      latestEntry
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch latest entry', error });
+  }
+});
+
 
 // Update a form9 entry by ID
 router.put('/update/:id', async (req, res) => {

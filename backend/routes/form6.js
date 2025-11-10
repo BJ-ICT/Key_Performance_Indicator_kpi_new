@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Create a new form6 entry
 router.post('/add', async (req, res) => {
-  const { no, network_engineer_kpi, division, section, kpi_percent, unavailable_minutes, total_minutes, total_nodes } = req.body;
+  const { no, network_engineer_kpi, division, section, kpi_percent, unavailable_minutes, total_minutes, total_nodes, year ,month } = req.body;
 
   try {
     // Create new Form6 entry with sub-row values
@@ -18,7 +18,9 @@ router.post('/add', async (req, res) => {
       kpi_percent,
       unavailable_minutes: unavailable_minutes || {}, // Use provided or default to empty
       total_minutes: total_minutes || {}, // Use provided or default to empty
-      total_nodes: total_nodes || {} // Use provided or default to empty
+      total_nodes: total_nodes || {}, // Use provided or default to empty
+      year,
+      month
     });
 
     await newForm6Entry.save();
@@ -49,6 +51,27 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get the latest Form9 entry (based on date)
+router.get('/latest', async (req, res) => {
+  try {
+    const latestEntry = await Form6.findOne().sort({ createdAt: -1 }); // Sort newest first
+    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
+
+    // Extract date & month
+    const createdAt = latestEntry.createdAt;
+    const latestDate = createdAt.getDate();
+    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
+
+    res.status(200).json({
+      message: 'Latest Form6 entry retrieved successfully',
+      latestDate,
+      latestMonth,
+      latestEntry
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch latest entry', error });
+  }
+});
 // Update a form6 entry by ID
 router.put('/update/:id', async (req, res) => {
   try {

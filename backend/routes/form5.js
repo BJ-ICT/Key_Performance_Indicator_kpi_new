@@ -60,6 +60,8 @@ router.route("/get/:id").get((req, res) => {
     });
 });
 
+// new latest month year method
+
 router.route("/update/:id").put((req, res) => {
   const form5Id = req.params.id;
   const { regionName, totalMinutes, totalNodes, unavailableNE } = req.body;

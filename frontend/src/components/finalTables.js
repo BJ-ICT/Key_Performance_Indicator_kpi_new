@@ -150,11 +150,27 @@ const computePercentages = (f, s, cols) => {
 };
 
 // Main Component
-export default function FinalTables() {
+export default function FinalTables({ showPeriodSelector = true }) {
   // States for data
   const [f6, setF6] = useState([]),
     [f7, setF7] = useState([]),
     [f8, setF8] = useState([]);
+  // Period selection
+  const [years, setYears] = useState([]);
+  const [months, setMonths] = useState([]);
+  const now = new Date();
+  const defaultYear = now.getFullYear();
+  const defaultMonth = now.toLocaleString("default", { month: "long" });
+  const [selectedYear, setSelectedYear] = useState(defaultYear);
+  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
+  
+  // Always use current year/month when showPeriodSelector is false
+  useEffect(() => {
+    if (!showPeriodSelector) {
+      setSelectedYear(defaultYear);
+      setSelectedMonth(defaultMonth);
+    }
+  }, [showPeriodSelector, defaultYear, defaultMonth]);
   // Dynamic columns built from Region→Province→Engineer hierarchy
   const [columns, setColumns] = useState(defaultColumns);
   const [regionHierarchy, setRegionHierarchy] = useState([]);
@@ -208,6 +224,9 @@ export default function FinalTables() {
     row7: Array((columns || []).length).fill(0),
     row10: Array((columns || []).length).fill(0),
   });
+
+  // Ref for table container to sync scrolling
+  const tablesContainerRef = useRef(null);
 
   // Reinitialize when columns change
   useEffect(() => {
@@ -296,15 +315,41 @@ export default function FinalTables() {
     })();
   }, []);
 
+  // ============= Load available years/months and keep selection valid =============
+  useEffect(() => {
+    (async () => {
+      try {
+        const yRes = await axios.get("/api/periods/years");
+        const ys = Array.isArray(yRes.data) ? yRes.data : [];
+        setYears(ys);
+        const effectiveYear = ys.includes(selectedYear) ? selectedYear : (ys[ys.length - 1] || defaultYear);
+        setSelectedYear(effectiveYear);
+
+        if (effectiveYear) {
+          const mRes = await axios.get("/api/periods/months", { params: { year: effectiveYear } });
+          const ms = Array.isArray(mRes.data) ? mRes.data : [];
+          setMonths(ms);
+          if (!ms.includes(selectedMonth)) {
+            const fallback = ms.includes(defaultMonth) ? defaultMonth : (ms[ms.length - 1] || selectedMonth);
+            setSelectedMonth(fallback);
+          }
+        }
+      } catch (e) {
+        // ignore; dropdowns will fallback to current period
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ============= form6,7,8 => subs =============
   useEffect(() => {
     setLoading(true);
     (async () => {
       try {
         const [r6, r7, r8] = await Promise.all([
-          axios.get("/form6"),
-          axios.get("/form7"),
-          axios.get("/form8"),
+          axios.get("/form6", { params: { year: selectedYear, month: selectedMonth } }),
+          axios.get("/form7", { params: { year: selectedYear, month: selectedMonth } }),
+          axios.get("/form8", { params: { year: selectedYear, month: selectedMonth } }),
         ]);
         const d6 = r6.data,
           d7 = r7.data,
@@ -331,7 +376,7 @@ export default function FinalTables() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     if (!f6.length && !f7.length && !f8.length) return;
@@ -352,6 +397,48 @@ export default function FinalTables() {
     (async () => {
       try {
         const { data } = await axios.get("/form4");
+        const rows = Array.isArray(data) ? data : [];
+
+        // helper: convert various month representations to month number (1-12)
+        const monthToNumber = (m) => {
+          if (m === undefined || m === null) return null;
+          if (typeof m === "number") return m;
+          const s = String(m).trim();
+          if (!s) return null;
+          const n = parseInt(s, 10);
+          if (!Number.isNaN(n) && n >= 1 && n <= 12) return n;
+          // try parsing month name
+          const dt = new Date(s + " 1, 2000");
+          if (!Number.isNaN(dt.getTime())) return dt.getMonth() + 1;
+          return null;
+        };
+
+        // If rows include year/month fields, prefer filtering by selectedYear/selectedMonth
+        const hasYearMonth = rows.some((r) => r && (r.year !== undefined || r.month !== undefined));
+        let sourceRows = rows;
+        if (hasYearMonth) {
+          const selMonthNum = monthToNumber(selectedMonth);
+          sourceRows = rows.filter((r) => {
+            try {
+              const rowYear = r.year !== undefined && r.year !== null ? String(r.year).trim() : null;
+              const selYearStr = selectedYear !== undefined && selectedYear !== null ? String(selectedYear).trim() : null;
+              const yearMatch = !rowYear || !selYearStr ? true : rowYear === selYearStr;
+
+              const rowMonthNum = monthToNumber(r.month);
+              const monthMatch = rowMonthNum === null || selMonthNum === null ? true : rowMonthNum === selMonthNum;
+
+              return yearMatch && monthMatch;
+            } catch (e) {
+              return false;
+            }
+          });
+        }
+
+        // Debug output for troubleshooting
+        console.log('[ServiceFulfillment] All rows:', rows);
+        console.log('[ServiceFulfillment] Filtered rows:', sourceRows);
+        console.log('[ServiceFulfillment] selectedYear:', selectedYear, 'selectedMonth:', selectedMonth);
+
         const totals = {};
         [
           "CENHKMD",
@@ -375,11 +462,14 @@ export default function FinalTables() {
           "JA",
           "KOMLTMBVA",
         ].forEach((key, i) => {
-          totals[key] = data.slice(0, 8).reduce((sum, row, idx) => {
+          // Use up to first 8 entries of the (possibly filtered) sourceRows
+          totals[key] = (sourceRows.slice(0, 8)).reduce((sum, row, idx) => {
             const val = parseFloat(row[key]) || 0;
             return sum + val * servFulOkRowMultipliers[idx];
           }, 0);
         });
+
+        console.log('[ServiceFulfillment] Computed totals:', totals);
 
         const adjustedMapped = {};
         Object.keys(totals).forEach((k) => {
@@ -393,7 +483,7 @@ export default function FinalTables() {
         console.error("Error fetching form4:", err);
       }
     })();
-  }, [threshold90]);
+  }, [threshold90, selectedYear, selectedMonth]);
 
   // ============= form9 + final-data => kpiRes + kpiData =============
   useEffect(() => {
@@ -523,26 +613,30 @@ export default function FinalTables() {
     (async () => {
       try {
         const [dynRes, kpiTowerRes] = await Promise.all([
-          axios.get("/api/ProcessedDataFetch1"),
+          axios.get("/api/ProcessedDataFetch1", { params: { year: selectedYear, month: selectedMonth } }),
           axios.get("/api/kpi-tower"),
         ]);
         const dd = dynRes.data || [];
         if (!dd.length) return;
 
-        const extractedHeaders = dd[0].details.map((d) => d.Column1),
-          currentMonth = new Date().toLocaleString("default", { month: "long" }),
-          specialMonths = ["March", "June", "September", "December"];
-        let selMonths = [];
-        if (currentMonth === "March") selMonths = ["January", "February", "March"];
-        else if (currentMonth === "June") selMonths = ["April", "May", "June"];
-        else if (currentMonth === "September") selMonths = ["July", "August", "September"];
-        else if (currentMonth === "December") selMonths = ["October", "November", "December"];
+        const extractedHeaders = dd[0].details.map((d) => d.Column1);
+        // Use the selectedMonth (not the current system month) so the UI shows
+        // actual values for the user-selected period.
+        const sel = selectedMonth;
+        const specialMonths = ["March", "June", "September", "December"];
 
-        const calcVals = [];
-        extractedHeaders.forEach((hdr) => {
-          if (!specialMonths.includes(currentMonth)) {
-            calcVals.push("100.00");
-          } else {
+        // For quarter-ending months, compute the quarter (3 months) totals.
+        const quarterMap = {
+          March: ["January", "February", "March"],
+          June: ["April", "May", "June"],
+          September: ["July", "August", "September"],
+          December: ["October", "November", "December"],
+        };
+
+        const calcVals = extractedHeaders.map((hdr) => {
+          // If selectedMonth is a quarter month, aggregate over the quarter
+          if (specialMonths.includes(sel)) {
+            const selMonths = quarterMap[sel] || [sel];
             let totalAch = 0,
               totalDist = 0;
             dd.forEach((m) => {
@@ -554,10 +648,22 @@ export default function FinalTables() {
                 }
               }
             });
-            const pct =
-              totalDist > 0 ? ((totalAch / totalDist) * 100).toFixed(2) : "0.00";
-            calcVals.push(pct);
+            return totalDist > 0 ? ((totalAch / totalDist) * 100).toFixed(2) : "0.00";
           }
+
+          // Non-quarter months: compute for the selectedMonth only (real value)
+          let totalAch = 0,
+            totalDist = 0;
+          dd.forEach((m) => {
+            if (m.month === sel) {
+              const colItem = m.details.find((x) => x.Column1 === hdr);
+              if (colItem) {
+                totalAch += parseFloat(colItem.Column3) || 0;
+                totalDist += parseFloat(colItem.Column2) || 0;
+              }
+            }
+          });
+          return totalDist > 0 ? ((totalAch / totalDist) * 100).toFixed(2) : "0.00";
         });
 
         const allK = kpiTowerRes.data || [];
@@ -591,7 +697,7 @@ export default function FinalTables() {
         console.error("Error CurrentMonth data:", err);
       }
     })();
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   // ============= Multi-platform placeholders (not used in Row 3) =============
   useEffect(() => {
@@ -911,27 +1017,40 @@ export default function FinalTables() {
   const renderCurrentMonthRow = () => {
     if (!columnSums.length) return null;
 
-    const colArr = columns.map((c, i) => {
-      const val = columnSums[i] || "0.00";
-      return rSumRowWithWeightage(parseFloat(val) || 0);
-    });
+    // Build the two-row representation for Current Month so it shows as two
+    // physical rows in the final table while keeping header alignment:
+    // - first TR: place Achieved KPI values into the LEFT cell of each pair
+    // - second TR: place Achieved KPI with Weightage into the RIGHT cell of each pair
+    const achievedVals = columns.map((c, i) => columnSums[i] || "0.00");
+    const weightVals = columns.map((c, i) => rSumRowWithWeightage(parseFloat(columnSums[i]) || 0));
 
-    colArr.forEach((strVal, i) => {
-      columnsAchievedRef.current.row10[i] = parseFloat(strVal.replace("%", "")) || 0;
+    // update per-column achieved-with-weightage ref (row10)
+    weightVals.forEach((strVal, i) => {
+      columnsAchievedRef.current.row10[i] = parseFloat(String(strVal).replace("%", "")) || 0;
     });
 
     return (
-      <tr key="current-month-row">
-        {columns.map((col, i) => {
-          const val = columnSums[i] || "0.00";
-          return (
-            <React.Fragment key={col}>
-              <td>{val + "%"}</td>
-              <td>{colArr[i]}</td>
+      <>
+        <tr key="current-month-row-achieved">
+          {columns.map((col, i) => (
+            <React.Fragment key={col + "-ach"}>
+              <td>{achievedVals[i] + "%"}</td>
+              {/* empty right cell to keep pair alignment */}
+              <td></td>
             </React.Fragment>
-          );
-        })}
-      </tr>
+          ))}
+        </tr>
+
+        <tr key="current-month-row-weighted">
+          {columns.map((col, i) => (
+            <React.Fragment key={col + "-w"}>
+              {/* empty left cell to keep pair alignment */}
+              <td></td>
+              <td>{weightVals[i]}</td>
+            </React.Fragment>
+          ))}
+        </tr>
+      </>
     );
   };
 
@@ -1434,105 +1553,127 @@ export default function FinalTables() {
   return (
     <ProtectedComponent>
       <div className="final-tables-container">
-        {/* Title */}
-        <h1 className="final-tables-title">Final KPI</h1>
-
-        {/* side-by-side-tables */}
-        <div className="side-by-side-tables">
-          {/* LEFT: KPI Table */}
-          <div className="kpi-table-container">
-            <table className="kpi-table">
-              <thead>
-                <tr className="colSpan-header">
-                  <th
-                    colSpan="7"
-                    style={{
-                      textAlign: "right",
-                      paddingLeft: "50px",
-                      paddingRight: "20px",
-                      backgroundColor: "#2b51baff",
-                      color: "white",
-                    }}
-                  >
-                    R-GM
-                  </th>
-                </tr>
-                <tr className="colSpan-header">
-                  <th
-                    colSpan="7"
-                    style={{
-                      textAlign: "right",
-                      paddingLeft: "50px",
-                      paddingRight: "20px",
-                      backgroundColor: "#2b51baff",
-                      color: "white",
-                    }}
-                  >
-                    P-DGM
-                  </th>
-                </tr>
-                <tr className="colSpan-header">
-                  <th
-                    colSpan="7"
-                    style={{
-                      textAlign: "right",
-                      paddingLeft: "50px",
-                      paddingRight: "20px",
-                      backgroundColor: "#2b51baff",
-                      color: "white",
-                    }}
-                  >
-                    NW EE/RTOM AREA
-                  </th>
-                </tr>
-
-                <tr>
-                  <th>#</th>
-                  <th>Perspectives</th>
-                  <th>Strategic Objectives (KRA)</th>
-                  <th>Key Performance Indicators (KPI)</th>
-                  <th>Unit</th>
-                  <th>Description of KPI</th>
-                  <th>Weightage</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kpiData.length ? (
-                  <>
-                    {kpiData
-                      .filter((o) => ![4, 8, 9].includes(o.rowNumber || o.no))
-                      .map((o) => (
-                        <tr key={o._id}>
-                          <td>{o.rowNumber || "-"}</td>
-                          <td>{o.perspectives || "-"}</td>
-                          <td>{o.strategicObjectives || "-"}</td>
-                          <td style={{ textAlign: "left" }}>
-                            <b>{o.keyPerformanceIndicators || "-"}</b>
-                          </td>
-                          <td>{o.unit || "-"}</td>
-                          <td>{o.descriptionOfKPI || "-"}</td>
-                          <td>{(o.weightage || "-") + "%"}</td>
-                        </tr>
-                      ))}
-
-                    {/* 11) Sum of Weightage Row */}
-                    {renderKpiWeightageSumRow()}
-
-                    {/* 12) Sub Weightage Row */}
-                    {renderKpiSubWeightageSumRow()}
-                  </>
-                ) : (
-                  <tr>
-                    <th colSpan="7">No data available</th>
+        <h1 className="final-tables-title">
+          Final KPI {!showPeriodSelector && `- ${selectedMonth} ${selectedYear}`}
+        </h1>
+        {showPeriodSelector && (
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
+            <label>
+              Year: {" "}
+              <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))}>
+                {[...new Set([selectedYear, ...years])].sort((a,b)=>a-b).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Month: {" "}
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+                {[...new Set([selectedMonth, ...months])].map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+        <div className="side-by-side-tables" ref={tablesContainerRef}>
+          {/* Left KPI Table (fixed) */}
+          <div className="kpi-table-wrapper">
+            <div className="kpi-table-container">
+              <table className="kpi-table">
+                <thead>
+                  <tr className="colSpan-header">
+                    <th
+                      colSpan="7"
+                      style={{
+                        textAlign: "right",
+                        paddingLeft: "50px",
+                        paddingRight: "20px",
+                        backgroundColor: "#2b51baff",
+                        color: "white",
+                      }}
+                    >
+                      R-GM
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                  <tr className="colSpan-header">
+                    <th
+                      colSpan="7"
+                      style={{
+                        textAlign: "right",
+                        paddingLeft: "50px",
+                        paddingRight: "20px",
+                        backgroundColor: "#2b51baff",
+                        color: "white",
+                      }}
+                    >
+                      P-DGM
+                    </th>
+                  </tr>
+                  <tr className="colSpan-header">
+                    <th
+                      colSpan="7"
+                      style={{
+                        textAlign: "right",
+                        paddingLeft: "50px",
+                        paddingRight: "20px",
+                        backgroundColor: "#2b51baff",
+                        color: "white",
+                      }}
+                    >
+                      NW EE/RTOM AREA
+                    </th>
+                  </tr>
+
+                  <tr>
+                    <th>#</th>
+                    <th>Perspectives</th>
+                    <th>Strategic Objectives (KRA)</th>
+                    <th>Key Performance Indicators (KPI)</th>
+                    <th>Unit</th>
+                    <th>Description of KPI</th>
+                    <th>Weightage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kpiData.length ? (
+                    <>
+                      {kpiData
+                        .filter((o) => ![4, 8, 9].includes(o.rowNumber || o.no))
+                        .map((o) => (
+                          <tr key={o._id}>
+                            <td>{o.rowNumber || "-"}</td>
+                            <td>{o.perspectives || "-"}</td>
+                            <td>{o.strategicObjectives || "-"}</td>
+                            <td style={{ textAlign: "left" }}>
+                              <b>{o.keyPerformanceIndicators || "-"}</b>
+                            </td>
+                            <td>{o.unit || "-"}</td>
+                            <td>{o.descriptionOfKPI || "-"}</td>
+                            <td>{(o.weightage || "-") + "%"}</td>
+                          </tr>
+                        ))}
+
+                      {/* 11) Sum of Weightage Row */}
+                      {renderKpiWeightageSumRow()}
+
+                      {/* 12) Sub Weightage Row */}
+                      {renderKpiSubWeightageSumRow()}
+                    </>
+                  ) : (
+                    <tr>
+                      <th colSpan="7">No data available</th>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* RIGHT: Platform Distribution Table */}
-          <div className="final-table-container">
-            <table className="final-distribution-table">
+          {/* Right Final Table (scrollable) */}
+          <div className="final-table-wrapper">
+            <div className="final-table-container">
+              <table className="final-distribution-table">
               <thead>
                 <tr style={{ height: "1px" }}>
                   {regionHierarchy.length ? (
@@ -1600,7 +1741,8 @@ export default function FinalTables() {
                 {renderServFulOkRow()}
 
                 {/* 10) Current Month Row */}
-                {renderCurrentMonthRow()}
+                {/* {renderCurrentMonthRow()} */}
+                {renderAverageRow()}
 
                 {/* 11) Sum of all Achieved KPI with Weightage (includes Row 3) */}
                 {renderSumOfAchievedKpiWithWeightageRow()}
@@ -1608,10 +1750,12 @@ export default function FinalTables() {
                 {/* 12) Normalized by total KPI weightage (includes Row 3) */}
                 {render12thRowDividedByKpiWeightage()}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
 
+        {/* Export button */}
         <button
           onClick={exportToExcel}
           style={{

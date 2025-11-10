@@ -8,9 +8,10 @@ import ExcelJS from "exceljs";
 const Form6Table = () => {
   const [data, setData] = useState([]);
   const [regionTable, setRegionTable] = useState([]);
-  const [daysInMonth] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-  );
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const [daysInMonth] = useState(new Date(currentYear, now.getMonth() + 1, 0).getDate());
 
   const [editCell, setEditCell] = useState({ rowId: null, key: null, value: "" });
   const [isEditingAllowed, setIsEditingAllowed] = useState(true);
@@ -90,8 +91,11 @@ const Form6Table = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/form6");
-      setData(res.data);
+      const res = await axios.get("/form6", { params: { year: String(currentYear), month: currentMonth } });
+      // filter returned entries to current year/month (backend may already do this)
+      const entries = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      const filtered = entries.filter((item) => String(item.year) === String(currentYear) && String(item.month) === currentMonth);
+      setData(filtered);
     } catch (e) {
       console.error(e);
       setError("Failed to load table data. Please try again later.");

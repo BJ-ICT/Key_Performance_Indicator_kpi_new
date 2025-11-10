@@ -23,6 +23,8 @@ import ADMIN4 from "./components/admin4";
 import ADMIN5 from "./components/admin5";
 import ADMIN6 from "./components/admin6";
 import FinalTables from "./components/finalTables";
+import CurrentMonthKPI from './components/CurrentMonthKPI';
+import PreviousMonthsKPI from './components/PreviousMonthsKPI';
 import Homepage from "./components/home";
 import LOGIN from "./components/login";
 import ADMINREGISTER from "./components/adminregister";
@@ -413,8 +415,8 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/final-tables" element={<HomePage />} />
-          {/* <Route path="/final-tables" element={<FinalTables />} /> */}
+          <Route path="/current-month-kpi" element={<CurrentMonthKPI />} />
+          <Route path="/previous-months-kpi" element={<PreviousMonthsKPI />} />
           <Route path="/unauthorized" element={<Unauthorize />} />
           <Route
             path="/service_fulfilment"

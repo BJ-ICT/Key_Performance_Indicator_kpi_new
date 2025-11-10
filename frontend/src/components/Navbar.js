@@ -3,9 +3,11 @@ import "./navbar.css";
 import { msalInstance, clearAllAuthState } from "../utils/msalConfig";
 import { useAuth } from "../hooks/useAuth";
 
+
 const TopNav = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const [overalldropdownOpen, setOverallDropdownOpen] = useState(false);
   const [isResponsive, setIsResponsive] = useState(false);
   const { user, logout: authLogout } = useAuth();
 
@@ -19,12 +21,20 @@ const TopNav = () => {
     e.stopPropagation();
     setDropdownOpen(!dropdownOpen);
     setAdminDropdownOpen(false);
+    setOverallDropdownOpen(false);
+  };
+  const toggleoverallDropdown = (e) => {
+    e.stopPropagation();
+    setOverallDropdownOpen(!overalldropdownOpen);
+    setDropdownOpen(false);
+    setAdminDropdownOpen(false);
   };
 
   const toggleAdminDropdown = (e) => {
     e.stopPropagation();
     setAdminDropdownOpen(!adminDropdownOpen);
     setDropdownOpen(false);
+    setOverallDropdownOpen(false);  
   };
 
   useEffect(() => {
@@ -47,6 +57,7 @@ const TopNav = () => {
           account: currentAccount,
           onRedirectNavigate: () => true,
           postLogoutRedirectUri: "http://localhost:3000/",
+          //postLogoutRedirectUri: "https://socapplications.intranet.slt.com.lk/",
         });
         return; // navigation will happen via redirect
       }
@@ -91,14 +102,42 @@ const TopNav = () => {
           >
             Dashboard
           </a>
-          <a
+          {/* <a
             href="/final-tables"
             className={`nav-link ${
               activePage === "/final-tables" ? "active" : ""
             }`}
           >
-            Overall KPI
+            Overall KPI 
           </a>
+          */}
+           <div className="dropdown">
+            <button className="dropbtn" onClick={toggleoverallDropdown}>
+              <span>Overall KPI</span>
+            <i className="dropdown-icon">&#9660;</i>
+            </button>
+             {overalldropdownOpen && (
+              <div className="dropdown-content show">
+                <a
+                  href="/current-month-kpi"
+                  className={
+                    isActiveRoute("/current-month-kpi") ? "active" : ""
+                  }
+                >
+                  Current Month
+                </a>
+                <a
+                  href="/previous-months-kpi"
+                  className={
+                    isActiveRoute("/previous-months-kpi") ? "active" : ""
+                  }
+                >
+                  Previous Months
+                </a>
+              </div>
+             )}
+           </div>
+
           <div className="dropdown">
             <button className="dropbtn" onClick={toggleDropdown}>
               <span>Platform KPI</span>
@@ -189,6 +228,62 @@ const TopNav = () => {
                   }
                 >
                   Region Management
+                </a>
+
+                {/* Additional admin links requested */}
+                <a
+                  href="/ip_nw_op_form"
+                  className={isActiveRoute("/ip_nw_op_form") ? "active" : ""}
+                >
+                  IP NW OP
+                </a>
+                <a
+                  href="/bb_anw_form"
+                  className={isActiveRoute("/bb_anw_form") ? "active" : ""}
+                >
+                  BB ANW
+                </a>
+                <a
+                  href="/int_&_nt_op_form1"
+                  className={isActiveRoute("/int_&_nt_op_form1") ? "active" : ""}
+                >
+                  OTN OP_1
+                </a>
+                <a
+                  href="/int_&_nt_op_form2"
+                  className={isActiveRoute("/int_&_nt_op_form2") ? "active" : ""}
+                >
+                  OTN OP_2
+                </a>
+                <a
+                  href="/tower_mtce_acievement_form"
+                  className={isActiveRoute("/tower_mtce_acievement_form") ? "active" : ""}
+                >
+                  TOWER MTCE ACIEVEMENT
+                </a>
+                <a
+                  href="/tm_activity_plan_form"
+                  className={isActiveRoute("/tm_activity_plan_form") ? "active" : ""}
+                >
+                  TM Activity Plan
+                </a>
+                <a
+                  href="/routine_mtnc_form"
+                  className={isActiveRoute("/routine_mtnc_form") ? "active" : ""}
+                >
+                  ROUTINE MTNC
+                </a>
+                <a
+                  href="/email"
+                  className={isActiveRoute("/email") ? "active" : ""}
+                >
+                  E-mail Service
+                </a>
+                <a
+                  href="/Final_table_Frm"
+                  className={isActiveRoute("/Final_table_Frm") ? "active" : ""}
+                >
+                  Final Table
                 </a>
               </div>
             )}

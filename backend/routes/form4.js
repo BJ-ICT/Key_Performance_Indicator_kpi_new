@@ -43,6 +43,7 @@ router.post("/add", async (req, res) => {
       weightage,
       datasources,
       areas: areasBody,
+      year, month,
       ...rest // legacy area fields may be here (CENHKMD, etc.)
     } = req.body || {};
 
@@ -62,6 +63,8 @@ router.post("/add", async (req, res) => {
       weightage,
       datasources,
       areas,
+      year,
+      month
     });
 
     res.json({ message: "form4 Added", id: doc._id });
@@ -95,7 +98,7 @@ router.get("/", async (_req, res) => {
 });
 
 // READ ONE
-router.get("/get/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const doc = await Form4.findById(req.params.id).lean();
     if (!doc) return res.status(404).json({ error: "Not found" });
@@ -112,7 +115,27 @@ router.get("/get/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch form4 item" });
   }
 });
+// latest
+router.get('/latest', async (req, res) => {
+  try {
+    const latestEntry = await Form4.findOne().sort({ createdAt: -1 }); // Sort newest first
+    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
 
+    // Extract date & month
+    const createdAt = latestEntry.createdAt;
+    const latestDate = createdAt.getDate();
+    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
+
+    res.status(200).json({
+      message: 'Latest Form4 entry retrieved successfully',
+      latestDate,
+      latestMonth,
+      latestEntry
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch latest entry', error });
+  }
+});
 // UPDATE
 router.put("/update/:id", async (req, res) => {
   try {
@@ -127,6 +150,7 @@ router.put("/update/:id", async (req, res) => {
       weightage,
       datasources,
       areas: areasBody,
+      year, month,
       ...rest
     } = req.body || {};
 
@@ -147,6 +171,7 @@ router.put("/update/:id", async (req, res) => {
       ...(definedoladetails !== undefined && { definedoladetails }),
       ...(weightage !== undefined && { weightage }),
       ...(datasources !== undefined && { datasources }),
+      
     };
 
     // If any area keys were provided, set the whole map (replace)
