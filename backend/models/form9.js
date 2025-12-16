@@ -38,8 +38,8 @@ const form9Schema = new mongoose.Schema(
     kpi_percent: { type: Number, required: false },
     Total_Failed_Links: subRowSchema,
     Links_SLA_Not_Violated: subRowSchema,
-    year: { type: String, required: false },
-    month: { type: Number, required: false }
+    year: { type: String},
+    month: { type: Number}
   },
   { 
     collection: form9Collection, // Dynamic collection name

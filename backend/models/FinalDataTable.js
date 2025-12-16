@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+const currentYear = new Date().getFullYear();
+const finaldatatables = `finaldatatables`;
 
 const finalDataTableSchema = new mongoose.Schema(
   {
@@ -9,8 +11,11 @@ const finalDataTableSchema = new mongoose.Schema(
     unit: String,
     descriptionOfKPI: String,
     weightage: Number,
+    year:String,
+    month:String,
   },
-  { timestamps: true }
+  { collection: finaldatatables,
+    timestamps: true }
 );
 
 const FinalDataTable = mongoose.model('FinalDataTable', finalDataTableSchema);

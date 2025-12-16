@@ -313,33 +313,71 @@ export default function FinalTables({ showPeriodSelector = true }) {
         console.error("Error fetching Region Table:", e);
       }
     })();
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   // ============= Load available years/months and keep selection valid =============
+  // Fetch years on mount, normalize and pick an effective year
   useEffect(() => {
     (async () => {
       try {
         const yRes = await axios.get("/api/periods/years");
-        const ys = Array.isArray(yRes.data) ? yRes.data : [];
-        setYears(ys);
-        const effectiveYear = ys.includes(selectedYear) ? selectedYear : (ys[ys.length - 1] || defaultYear);
-        setSelectedYear(effectiveYear);
+        const raw = Array.isArray(yRes.data) ? yRes.data : [];
+        // normalize: drop falsy entries and coerce to numbers when possible
+        const ys = raw
+          .filter((v) => v !== null && v !== undefined && v !== "")
+          .map((v) => (typeof v === "number" ? v : Number(v)))
+          .filter((n) => !Number.isNaN(n));
 
-        if (effectiveYear) {
-          const mRes = await axios.get("/api/periods/months", { params: { year: effectiveYear } });
-          const ms = Array.isArray(mRes.data) ? mRes.data : [];
-          setMonths(ms);
-          if (!ms.includes(selectedMonth)) {
-            const fallback = ms.includes(defaultMonth) ? defaultMonth : (ms[ms.length - 1] || selectedMonth);
-            setSelectedMonth(fallback);
-          }
-        }
+        // if no valid years returned, fall back to defaultYear
+        const yearsToSet = ys.length ? ys : [defaultYear];
+        setYears(yearsToSet);
+
+        const effectiveYear = yearsToSet.includes(selectedYear)
+          ? selectedYear
+          : yearsToSet[yearsToSet.length - 1] || defaultYear;
+        setSelectedYear(effectiveYear);
       } catch (e) {
-        // ignore; dropdowns will fallback to current period
+        // ignore; will fall back to default
+        setYears([defaultYear]);
+        setSelectedYear(defaultYear);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch months whenever selectedYear changes. This keeps months in sync
+  // when the user picks a different year.
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!selectedYear) {
+          setMonths([defaultMonth]);
+          setSelectedMonth(defaultMonth);
+          return;
+        }
+
+        const mRes = await axios.get("/api/periods/months", {
+          params: { year: selectedYear },
+        });
+        const rawMonths = Array.isArray(mRes.data) ? mRes.data : [];
+        const ms = rawMonths.filter((m) => m !== null && m !== undefined && m !== "");
+        const monthsToSet = ms.length ? ms : [defaultMonth];
+        setMonths(monthsToSet);
+
+        // pick a sensible selectedMonth (preserve current if valid)
+        if (!monthsToSet.includes(selectedMonth)) {
+          const fallback = monthsToSet.includes(defaultMonth)
+            ? defaultMonth
+            : monthsToSet[monthsToSet.length - 1] || defaultMonth;
+          setSelectedMonth(fallback);
+        }
+      } catch (e) {
+        // ignore – keep default month
+        setMonths([defaultMonth]);
+        setSelectedMonth(defaultMonth);
+      }
+    })();
+  }, [selectedYear, defaultMonth]);
 
   // ============= form6,7,8 => subs =============
   useEffect(() => {
@@ -347,9 +385,9 @@ export default function FinalTables({ showPeriodSelector = true }) {
     (async () => {
       try {
         const [r6, r7, r8] = await Promise.all([
-          axios.get("/form6", { params: { year: selectedYear, month: selectedMonth } }),
-          axios.get("/form7", { params: { year: selectedYear, month: selectedMonth } }),
-          axios.get("/form8", { params: { year: selectedYear, month: selectedMonth } }),
+          axios.get("/form6"),
+          axios.get("/form7"),
+          axios.get("/form8"),
         ]);
         const d6 = r6.data,
           d7 = r7.data,
@@ -396,7 +434,7 @@ export default function FinalTables({ showPeriodSelector = true }) {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get("/form4");
+        const { data } = await axios.get("/form4",{ params: { year: 2025, month: 11 } });
         const rows = Array.isArray(data) ? data : [];
 
         // helper: convert various month representations to month number (1-12)
@@ -486,69 +524,119 @@ export default function FinalTables({ showPeriodSelector = true }) {
   }, [threshold90, selectedYear, selectedMonth]);
 
   // ============= form9 + final-data => kpiRes + kpiData =============
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       // Request form9 entries for the currently selected year/month
+  //       // (fetching `/form9/latest` may return only a single document)
+  //       const [form9Res, finalRes] = await Promise.all([
+  //         axios.get("/form9/latest", { params: { year: selectedYear, month: selectedMonth } }),
+  //         axios.get("/api/final-data", { params: { year: selectedYear, month: selectedMonth } }),
+  //       ]);
+  //       const form9 = form9Res.data;
+  //       const final = finalRes.data;
+
+  //       const findK = (n, k) =>
+  //         (Array.isArray(form9)
+  //           ? form9.find((x) => x.no === n && x.network_engineer_kpi === k)
+  //           : Object.values(form9).find(
+  //               (x) => x.no === n && x.network_engineer_kpi === k
+  //             )) || null;
+
+  //       const k12 = findK(12, "Fiber Failures Restoration(General): <4 Hrs");
+  //       const k13 = findK(
+  //         13,
+  //         "Fiber Failures Restoration(Large scale< Pole damages etc>): <8 Hrs"
+  //       );
+  //       const arr = [];
+
+  //       if (k12) {
+  //         const { Total_Failed_Links, Links_SLA_Not_Violated, kpi_percent } =
+  //           k12;
+  //         arr.push({
+  //           kpiName: k12.network_engineer_kpi,
+  //           kpiPercent: kpi_percent,
+  //           percentages: computePercentages(
+  //             Total_Failed_Links,
+  //             Links_SLA_Not_Violated,
+  //             columns
+  //           ),
+  //         });
+  //       }
+  //       if (k13) {
+  //         const { Total_Failed_Links, Links_SLA_Not_Violated, kpi_percent } =
+  //           k13;
+  //         arr.push({
+  //           kpiName: k13.network_engineer_kpi,
+  //           kpiPercent: kpi_percent,
+  //           percentages: computePercentages(
+  //             Total_Failed_Links,
+  //             Links_SLA_Not_Violated,
+  //             columns
+  //           ),
+  //         });
+  //       }
+  //       setKpiRes(arr);
+
+  //       const sortedFinal = (final || []).sort((a, b) => {
+  //         const aNum = a.rowNumber !== undefined ? a.rowNumber : Number.MAX_SAFE_INTEGER;
+  //         const bNum = b.rowNumber !== undefined ? b.rowNumber : Number.MAX_SAFE_INTEGER;
+  //         return aNum - bNum;
+  //       });
+  //       setKpiData(sortedFinal);
+  //     } catch (err) {
+  //       console.error("Error fetching KPI data:", err);
+  //     }
+  //   })();
+  // }, []);
+
   useEffect(() => {
-    (async () => {
-      try {
-        const [form9Res, finalRes] = await Promise.all([
-          axios.get("/form9"),
-          axios.get("/api/final-data"),
-        ]);
-        const form9 = form9Res.data;
-        const final = finalRes.data;
+  (async () => {
+    try {
+      const [form9Res, finalRes] = await Promise.all([
+        axios.get("/form9/latest", { params: { year: "2025", month: "11" } }),
+        axios.get("/api/final-data", { params: { year: selectedYear, month: selectedMonth } }),
+      ]);
 
-        const findK = (n, k) =>
-          (Array.isArray(form9)
-            ? form9.find((x) => x.no === n && x.network_engineer_kpi === k)
-            : Object.values(form9).find(
-                (x) => x.no === n && x.network_engineer_kpi === k
-              )) || null;
+      const form9Entries = form9Res.data; // ← Already an array!
 
-        const k12 = findK(12, "Fiber Failures Restoration(General): <4 Hrs");
-        const k13 = findK(
-          13,
-          "Fiber Failures Restoration(Large scale< Pole damages etc>): <8 Hrs"
-        );
-        const arr = [];
+      const findK = (n, k) =>
+        form9Entries.find(x => x.no === n && x.network_engineer_kpi === k) || null;
 
-        if (k12) {
-          const { Total_Failed_Links, Links_SLA_Not_Violated, kpi_percent } =
-            k12;
-          arr.push({
-            kpiName: k12.network_engineer_kpi,
-            kpiPercent: kpi_percent,
-            percentages: computePercentages(
-              Total_Failed_Links,
-              Links_SLA_Not_Violated,
-              columns
-            ),
-          });
-        }
-        if (k13) {
-          const { Total_Failed_Links, Links_SLA_Not_Violated, kpi_percent } =
-            k13;
-          arr.push({
-            kpiName: k13.network_engineer_kpi,
-            kpiPercent: kpi_percent,
-            percentages: computePercentages(
-              Total_Failed_Links,
-              Links_SLA_Not_Violated,
-              columns
-            ),
-          });
-        }
-        setKpiRes(arr);
+      const k12 = findK(12, "Fiber Failures Restoration(General): <4 Hrs");
+      const k13 = findK(13, "Fiber Failures Restoration(Large scale< Pole damages etc>): <8 Hrs");
 
-        const sortedFinal = (final || []).sort((a, b) => {
-          const aNum = a.rowNumber !== undefined ? a.rowNumber : Number.MAX_SAFE_INTEGER;
-          const bNum = b.rowNumber !== undefined ? b.rowNumber : Number.MAX_SAFE_INTEGER;
-          return aNum - bNum;
+      const arr = [];
+
+      if (k12) {
+        arr.push({
+          kpiName: k12.network_engineer_kpi,
+          kpiPercent: k12.kpi_percent,
+          percentages: computePercentages(k12.Total_Failed_Links, k12.Links_SLA_Not_Violated, columns),
         });
-        setKpiData(sortedFinal);
-      } catch (err) {
-        console.error("Error fetching KPI data:", err);
       }
-    })();
-  }, []);
+
+      if (k13) {
+        arr.push({
+          kpiName: k13.network_engineer_kpi,
+          kpiPercent: k13.kpi_percent,
+          percentages: computePercentages(k13.Total_Failed_Links, k13.Links_SLA_Not_Violated, columns),
+        });
+      }
+
+      setKpiRes(arr);
+
+      const sortedFinal = (finalRes.data || []).sort((a, b) => {
+        const aNum = a.rowNumber ?? Infinity;
+        const bNum = b.rowNumber ?? Infinity;
+        return aNum - bNum;
+      });
+      setKpiData(sortedFinal);
+    } catch (err) {
+      console.error("Error fetching KPI data:", err);
+    }
+  })();
+}, [selectedYear, selectedMonth]);
 
   // ============= parse weightages & thresholds + totalWeight =============
   useEffect(() => {
@@ -613,7 +701,7 @@ export default function FinalTables({ showPeriodSelector = true }) {
     (async () => {
       try {
         const [dynRes, kpiTowerRes] = await Promise.all([
-          axios.get("/api/ProcessedDataFetch1", { params: { year: selectedYear, month: selectedMonth } }),
+          axios.get("/api/ProcessedDataFetch1"),
           axios.get("/api/kpi-tower"),
         ]);
         const dd = dynRes.data || [];
@@ -1016,11 +1104,8 @@ export default function FinalTables({ showPeriodSelector = true }) {
   // Row #10 => CurrentMonth Row
   const renderCurrentMonthRow = () => {
     if (!columnSums.length) return null;
-
-    // Build the two-row representation for Current Month so it shows as two
-    // physical rows in the final table while keeping header alignment:
-    // - first TR: place Achieved KPI values into the LEFT cell of each pair
-    // - second TR: place Achieved KPI with Weightage into the RIGHT cell of each pair
+    // Build a single-row representation for Current Month where each
+    // column contains two physical cells (Achieved KPI, Achieved KPI with Weightage).
     const achievedVals = columns.map((c, i) => columnSums[i] || "0.00");
     const weightVals = columns.map((c, i) => rSumRowWithWeightage(parseFloat(columnSums[i]) || 0));
 
@@ -1030,27 +1115,14 @@ export default function FinalTables({ showPeriodSelector = true }) {
     });
 
     return (
-      <>
-        <tr key="current-month-row-achieved">
-          {columns.map((col, i) => (
-            <React.Fragment key={col + "-ach"}>
-              <td>{achievedVals[i] + "%"}</td>
-              {/* empty right cell to keep pair alignment */}
-              <td></td>
-            </React.Fragment>
-          ))}
-        </tr>
-
-        <tr key="current-month-row-weighted">
-          {columns.map((col, i) => (
-            <React.Fragment key={col + "-w"}>
-              {/* empty left cell to keep pair alignment */}
-              <td></td>
-              <td>{weightVals[i]}</td>
-            </React.Fragment>
-          ))}
-        </tr>
-      </>
+      <tr key="current-month-row">
+        {columns.map((col, i) => (
+          <React.Fragment key={col}>
+            <td>{achievedVals[i] + "%"}</td>
+            <td>{weightVals[i]}</td>
+          </React.Fragment>
+        ))}
+      </tr>
     );
   };
 
@@ -1560,10 +1632,22 @@ export default function FinalTables({ showPeriodSelector = true }) {
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
             <label>
               Year: {" "}
-              <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))}>
-                {[...new Set([selectedYear, ...years])].sort((a,b)=>a-b).map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const n = v === "" ? defaultYear : Number(v);
+                  setSelectedYear(Number.isNaN(n) ? defaultYear : n);
+                }}
+              >
+                {[...new Set([selectedYear, ...years])]
+                  .filter((y) => y !== null && y !== undefined && y !== "")
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
               </select>
             </label>
             <label>
@@ -1741,9 +1825,8 @@ export default function FinalTables({ showPeriodSelector = true }) {
                 {renderServFulOkRow()}
 
                 {/* 10) Current Month Row */}
-                {/* {renderCurrentMonthRow()} */}
-                {renderAverageRow()}
-
+                {renderCurrentMonthRow()}
+                
                 {/* 11) Sum of all Achieved KPI with Weightage (includes Row 3) */}
                 {renderSumOfAchievedKpiWithWeightageRow()}
 

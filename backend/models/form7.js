@@ -39,8 +39,7 @@ const form7Schema = new mongoose.Schema({
   total_nodes: subRowSchema,                               // Sub-row for total_nodes
   year:{ type: String, required: false  },
   month:{ type: String, required: false  },
-}
-,
+},
 { 
     collection: form7Collection, // Dynamic collection name
     timestamps: true             // ✅ Enables createdAt and updatedAt

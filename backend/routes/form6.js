@@ -33,10 +33,37 @@ router.post('/add', async (req, res) => {
 // Get all form6 entries
 router.get('/', async (req, res) => {
   try {
-    const form6Entries = await Form6.find();
+    const { year, month } = req.query;
+    const query = {};
+    
+    if (year) query.year = year;
+    if (month) query.month = month;
+    const form6Entries = await Form6.find(query);
     res.status(200).json(form6Entries);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch Form6 entries', error });
+  }
+});
+
+// Get the latest Form9 entry (based on date)
+router.get('/latest', async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const query = {};
+
+    if (year) query.year = year;
+    if (month) query.month = Number(month);
+
+    const latestEntries = await Form6.find(query)
+      .sort({ updatedAt: -1 })
+      .limit(3)
+      .lean();
+
+    // Return ONLY the array of documents
+    res.status(200).json(latestEntries);
+  } catch (error) {
+    console.error('Error in /form6/latest:', error);
+    res.status(500).json({ message: 'Failed to fetch latest entries', error });
   }
 });
 
@@ -51,27 +78,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Get the latest Form9 entry (based on date)
-router.get('/latest', async (req, res) => {
-  try {
-    const latestEntry = await Form6.findOne().sort({ createdAt: -1 }); // Sort newest first
-    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
 
-    // Extract date & month
-    const createdAt = latestEntry.createdAt;
-    const latestDate = createdAt.getDate();
-    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
-
-    res.status(200).json({
-      message: 'Latest Form6 entry retrieved successfully',
-      latestDate,
-      latestMonth,
-      latestEntry
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch latest entry', error });
-  }
-});
 // Update a form6 entry by ID
 router.put('/update/:id', async (req, res) => {
   try {

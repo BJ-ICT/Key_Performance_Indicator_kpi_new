@@ -31,13 +31,14 @@ const form4Schema = new Schema(
       default: {},
     },
   },
-  { timestamps: true }
+  { collection: form4Collection,
+    timestamps: true }
 );
 
 // Implementing RTOM AREA filter
-const rtomAreaFilter = (data) => {
-    return data.filter(item => item.areas.has('RTOM'));
-};
+// const rtomAreaFilter = (data) => {
+//     return data.filter(item => item.areas.has('RTOM'));
+// };
 
 const Form4 = mongoose.model(`Form4_${currentYear}`, form4Schema);
 export default Form4;

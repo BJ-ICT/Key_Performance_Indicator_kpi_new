@@ -75,9 +75,17 @@ router.post("/add", async (req, res) => {
 });
 
 // READ ALL
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const docs = await Form4.find().lean();
+
+     const { year, month } = req.query;
+    const query = {};
+    
+    if (year) query.year = year;
+    if (month) query.month = month;
+    
+
+    const docs = await Form4.find(query).lean();
 
     // Flatten areas back to top-level fields for backward compatibility
     const withFlattened = docs.map((d) => {
@@ -94,6 +102,28 @@ router.get("/", async (_req, res) => {
   } catch (err) {
     console.error("GET /form4 error:", err);
     res.status(500).json({ error: "Failed to fetch form4" });
+  }
+});
+
+// latest
+router.get('/latest', async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const query = {};
+
+    if (year) query.year = year;
+    if (month) query.month = Number(month);
+
+    const latestEntries = await Form4.find(query)
+      .sort({ updatedAt: -1 })
+      .limit(8)
+      .lean();
+
+    // Return ONLY the array of documents
+    res.status(200).json(latestEntries);
+  } catch (error) {
+    console.error('Error in /form4/latest:', error);
+    res.status(500).json({ message: 'Failed to fetch latest entries', error });
   }
 });
 
@@ -115,27 +145,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch form4 item" });
   }
 });
-// latest
-router.get('/latest', async (req, res) => {
-  try {
-    const latestEntry = await Form4.findOne().sort({ createdAt: -1 }); // Sort newest first
-    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
 
-    // Extract date & month
-    const createdAt = latestEntry.createdAt;
-    const latestDate = createdAt.getDate();
-    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
-
-    res.status(200).json({
-      message: 'Latest Form4 entry retrieved successfully',
-      latestDate,
-      latestMonth,
-      latestEntry
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch latest entry', error });
-  }
-});
 // UPDATE
 router.put("/update/:id", async (req, res) => {
   try {

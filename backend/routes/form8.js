@@ -3,6 +3,7 @@ import Form8 from '../models/form8.js'; // Import the model
 
 const router = express.Router();
 
+
 // Create a new form8 entry
 router.post('/add', async (req, res) => {
   const { no, network_engineer_kpi, division, section, kpi_percent, unavailable_minutes, total_minutes, total_nodes, year, month } = req.body;
@@ -29,35 +30,41 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// Get the latest Form8 entry (based on date)
-router.get('/latest', async (req, res) => {
-  try {
-    const latestEntry = await Form8.findOne().sort({ createdAt: -1 }); // Sort newest first
-    if (!latestEntry) return res.status(404).json({ message: 'No entries found' });
-
-    // Extract date & month
-    const createdAt = latestEntry.createdAt;
-    const latestDate = createdAt.getDate();
-    const latestMonth = createdAt.getMonth() + 1; // months are 0-indexed
-
-    res.status(200).json({
-      message: 'Latest Form9 entry retrieved successfully',
-      latestDate,
-      latestMonth,
-      latestEntry
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch latest entry', error });
-  }
-});
-
 // Get all form8 entries
 router.get('/', async (req, res) => {
   try {
-    const form8Entries = await Form8.find();
+
+     const { year, month } = req.query;
+        const query = {};
+        
+        if (year) query.year = year;
+        if (month) query.month = month;
+        const form8Entries = await Form8.find(query);
+
     res.status(200).json(form8Entries);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch Form8 entries', error });
+  }
+});
+//latest
+router.get('/latest', async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const query = {};
+
+    if (year) query.year = year;
+    if (month) query.month = Number(month);
+
+    const latestEntries = await Form8.find(query)
+      .sort({ updatedAt: -1 })
+      .limit(4)
+      .lean();
+
+    // Return ONLY the array of documents
+    res.status(200).json(latestEntries);
+  } catch (error) {
+    console.error('Error in /form8/latest:', error);
+    res.status(500).json({ message: 'Failed to fetch latest entries', error });
   }
 });
 
