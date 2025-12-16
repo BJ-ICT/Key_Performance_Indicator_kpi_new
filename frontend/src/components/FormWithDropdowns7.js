@@ -444,7 +444,7 @@ const Form6Table = () => {
   if (loading) return <div className="loader" style={{ color: 'black' }}></div>;
   if (error) return <div className="error-message">{error}</div>;
 
-  // ---------------- UI ----------------
+  // ---------------- UI --
   return (
     <div className="page8-container">
       {/* Dropdowns (now fully dynamic from region table) */}
@@ -485,8 +485,8 @@ const Form6Table = () => {
             <option value="">Select RTOM</option>
             {dropdown4Options.map((opt) => (
               <option key={opt} value={opt}>
-                {/* Map option value to the canonical key then to a human label when possible */}
-                {optionMapping[resolveAreaKey(opt)] || opt}
+                {/* If your LEA is already a code like 'ngivt', you can map to label for readability */}
+                {optionMapping[normalizeKey(opt)] || opt}
               </option>
             ))}
           </select>
@@ -834,7 +834,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          backgroundColor: '#2563eb', 
+          backgroundColor: '#2563eb',
         }}
         onClick={handleSave}
       >
@@ -851,7 +851,7 @@ const Form6Table = () => {
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',
-          backgroundColor: '#28a745', 
+          backgroundColor: '#28a745',
         }}
       >
         Export to Excel

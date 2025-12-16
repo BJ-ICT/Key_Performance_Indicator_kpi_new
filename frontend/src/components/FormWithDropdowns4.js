@@ -371,7 +371,7 @@ const Form6Table = () => {
     link.click();
   };
 
-  // ---- UI ----
+  // ---- UI 
   if (loading) return <div className="loader" style={{ color: "black" }}></div>;
   if (error) return <div className="error-message">{error}</div>;
 

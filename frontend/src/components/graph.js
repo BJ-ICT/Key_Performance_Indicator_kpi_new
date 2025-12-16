@@ -2,228 +2,92 @@
 
 // src/components/FinalTables.js
 
-import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
-import ReactSpeedometer from 'react-d3-speedometer'; // Single Speedometer import
-import './finalTables.css';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-import { Bar } from 'react-chartjs-2';
-import 'chart.js/auto'; // Automatically imports chart types
-import annotationPlugin from 'chartjs-plugin-annotation';
-import { Chart } from 'chart.js';
-import ProtectedComponent from './ProtectedComponent ';
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios"; // used only for region table (Row-12 now from localStorage only)
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import { motion } from "framer-motion";
 
-// Columns for Platform Distribution & Achievements
-const columns = [
-  'NW/WPC-1','NW/WPC-2','NW/WPNE','NW/WPSW','NW/WPSE','NW/WPE','NW/WPN','NW/NWPE','NW/NWPW',
-  'NW/CPN','NW/CPS','NW/NCP','NW/UVA','NW/SAB','NW/SPE','NW/SPW','NW/WPS',
-  'NW/EP','NW/NP-1','NW/NP-2'
-];
 
-// Mapping column names => DB keys
-const columnToKeyMap = {
-  "NW/WPC":"cenhkmd","NW/WPNE":"gqkintb","NW/WPSW":"ndfrm","NW/WPSE":"awho","NW/WPE":"konix",
-  "NW/WPN":"ngivt","NW/NWPE":"kgkly","NW/NWPW":"cwpx","NW/CPN":"debkymt","NW/CPS":"gphtnw",
-  "NW/NCP":"adipr","NW/UVA":"bddwmrg","NW/SAB":"keirn","NW/SPE":"embmbmh","NW/SPW":"aggl",
-  "NW/WPS":"hrktph","NW/EP":"bcjrdkltc","NW/NP-1":"ja","NW/NP-2":"komltmbva"
+// ==============================
+// Helpers
+// ==============================
+
+const baseMeter = (col) => String(col || "").replace(/-\d+$/, "");
+const normalizeEngineer = (str = "") => String(str).split("(")[0].trim();
+const sortRegionNames = (a, b) => {
+  if (a === "Metro" && b !== "Metro") return -1;
+  if (b === "Metro" && a !== "Metro") return 1;
+
+  const ra = a.match(/Region\s*(\d+)/i);
+  const rb = b.match(/Region\s*(\d+)/i);
+  if (ra && rb) return Number(ra[1]) - Number(rb[1]);
+
+  return a.localeCompare(b);
 };
+// 
 
-// Mapping for ServFulOk keys => final keys
-const servFulOkMap = {
-  "CENHKMD":"cenhkmd","CENHKMD1":"cenhkmd1","GQKINTB":"gqkintb","NDRM":"ndfrm","AWHO":"awho",
-  "KONKX":"konix","NGWT":"ngivt","KGKLY":"kgkly","CWPX":"cwpx","DBKYMT":"debkymt","GPHTNW":"gphtnw",
-  "ADPR":"adipr","BDBWMRG":"bddwmrg","KERN":"keirn","EBMHMBH":"embmbmh","AGGL":"aggl",
-  "HRKTPH":"hrktph","BCAPKLTC":"bcjrdkltc","JA":"ja","KOMLTMBVA":"komltmbva"
-};
+function readRow12FromLocalStorage() {
+  if (typeof window === "undefined") return null;
 
-// Multipliers for ServFulOk rows
-const servFulOkRowMultipliers = [0.1, 0.2, 0.2, 0.1, 0.1, 0.2, 0.05, 0.05];
+  try {
+    const raw = window.localStorage.getItem("row12Payload");
+    if (!raw) return null;
 
-// Helper to parse "12.34%" => 12.34
-function parsePct(str){
-  if(!str) return 0;
-  return parseFloat(String(str).replace('%','')) || 0;
+    const parsed = JSON.parse(raw);
+
+    if (parsed?.valuesByMeter && typeof parsed.valuesByMeter === "object") {
+      return parsed.valuesByMeter;
+    }
+
+    if (Array.isArray(parsed?.columns) && Array.isArray(parsed?.values)) {
+      const map = {};
+      parsed.columns.forEach((m, i) => {
+        const v = parseFloat(parsed.values[i]);
+        map[m] = Number.isFinite(v) ? v : 0;
+      });
+      return map;
+    }
+  } catch (e) {
+    console.warn("Failed to parse localStorage row12Payload", e);
+  }
+
+  return null;
 }
 
-// Utility Functions
-const calcPct = (tm, um, tn) => {
-  if(!tm && !um && !tn) return 100;
-  const days = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth()+1,
-    0
-  ).getDate();
-  const total = 24 * 60 * days * tn;
-  const avail = tm - um;
-  return total ? (100 * avail) / total : 0;
-};
+// Removed remote fetch for Row-12: relying exclusively on localStorage (written by FinalTables component).
 
-const calcTotals = (data, mult) => {
-  const t = {};
-  data.forEach((e, i) => {
-    if(e.total_minutes && e.unavailable_minutes && e.total_nodes){
-      const m = mult[i] || 1;
-      Object.keys(e.total_minutes).forEach(k => {
-        const pct = calcPct(
-          e.total_minutes[k] || 0,
-          e.unavailable_minutes[k] || 0,
-          e.total_nodes[k] || 0
-        );
-        t[k] = (t[k] || 0) + pct * m;
-      });
-    }
-  });
-  return t;
-};
 
-const computePercentages = (f, s) => {
-  const p = {};
-  columns.forEach(col => {
-    const k = columnToKeyMap[col],
-          fv = parseFloat(f?.[k]) || 0,
-          sv = parseFloat(s?.[k]) || 0;
+// ==============================
+// Dashboard Component
+// ==============================
 
-    // If both values are 0, set percentage to 100
-    if (fv === 0 && sv === 0) {
-      p[col] = "100.00";
-    } else {
-      p[col] = sv ? ((fv / sv) * 100).toFixed(2) : "0.00";
-    }
-  });
-  return p;
-};
+export default function Dashboard() {
+  const [regions, setRegions] = useState([]);
+  const [totals, setTotals] = useState({});
+  const [loading, setLoading] = useState(true);
 
-// Main Component
-export default function FinalTables(){
-  // States for data
-  const [f6, setF6] = useState([]), [f7, setF7] = useState([]), [f8, setF8] = useState([]);
-  const [subs, setSubs] = useState({});
-  const [servFulOkRow, setServFulOkRow] = useState({});
-  const [kpiRes, setKpiRes] = useState([]), [kpiData, setKpiData] = useState([]);
-  const [columnSums, setColumnSums] = useState([]);
-  const [msanPlaceholders, setMsanPlaceholders] = useState({});
-  const [vpnPlaceholders, setVpnPlaceholders] = useState({});
-  const [slbnPlaceholders, setSlbnPlaceholders] = useState({});
-  const [averagePlaceholder, setAveragePlaceholder] = useState({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get("/api/region-table");
+        const items = data?.data || [];
 
-  // States for row #5, #6, #7, #10 weightages
-  const [sumRowWeightage, setSumRowWeightage] = useState(0);
-  const [currentMonthWeightage, setCurrentMonthWeightage] = useState(0);
-  const [servFulOkWeightage, setServFulOkWeightage] = useState(0);
-  const [finalDataRowWeightage, setFinalDataRowWeightage] = useState(0);
-
-  // State for Total Weightage from KPI Table
-  const [totalWeight, setTotalWeight] = useState(0);
-
-  // States for Threshold Values
-  const [threshold1, setThreshold1] = useState(null); // For Row 1
-  const [threshold2, setThreshold2] = useState(null); // For Row 2
-  const [threshold5, setThreshold5] = useState(99.899); // For Row 5
-  const [threshold95, setThreshold95] = useState(95);   // For Row 10
-  const [threshold90, setThreshold90] = useState(90);   // For Row 7
-
-  // New State: Achieved KPI with Weightage
-  const [achievedKpiWithWeightage, setAchievedKpiWithWeightage] = useState({
-    row1: 0,
-    row2: 0,
-    row5: 0,
-    row6: 0,
-    row7: 0,
-    row10: 0,
-  });
-
-  /**
-   * We'll track the "Achieved KPI with Weightage" for each column of rows #1, #2, #5, #6, #7, #10.
-   * columnsAchievedRef.current will be an object like:
-   * {
-   *   row1: [12.3, 45.6, ...],   // length = columns.length
-   *   row2: [...],
-   *   row5: [...],
-   *   row6: [...],
-   *   row7: [...],
-   *   row10: [...]
-   * }
-   */
-  const columnsAchievedRef = useRef({
-    row1: Array(columns.length).fill(0),
-    row2: Array(columns.length).fill(0),
-    row5: Array(columns.length).fill(0),
-    row6: Array(columns.length).fill(0),
-    row7: Array(columns.length).fill(0),
-    row10: Array(columns.length).fill(0),
-  });
-
-  // ============= Fetching form6, form7, form8 => subTotals =============
-  useEffect(()=>{
-    (async()=>{
-      try{
-        const [r6, r7, r8] = await Promise.all([
-          axios.get("/form6"),
-          axios.get("/form7"),
-          axios.get("/form8")
-        ]);
-        const d6 = r6.data, d7 = r7.data, d8 = r8.data;
-        d6.forEach(e => {
-          ["total_minutes", "unavailable_minutes", "total_nodes"].forEach(f => {
-            if(e[f]){
-              // Ensure 'cenhkmd' is prioritized over 'cenhkmd1'
-              if(!e[f].cenhkmd || e[f].cenhkmd === 0) e[f].cenhkmd = e[f].cenhkmd1 || e[f].cenhkmd;
-              if(!e[f].cenhkmd1 || e[f].cenhkmd1 === 0) e[f].cenhkmd1 = e[f].cenhkmd;
-            }
-          });
-        });
-        setF6(d6); setF7(d7); setF8(d8);
-      } catch(err){ console.error("Error fetching f6,7,8:", err); }
-    })();
-  }, []);
-
-  useEffect(()=>{
-    if(!f6.length && !f7.length && !f8.length) return;
-    const t6 = calcTotals(f6, [0.05, 0.05, 0.3]);
-    const t7 = calcTotals(f7, [0.02, 0.01, 0.13, 0.17]);
-    const t8 = calcTotals(f8, [0.2, 0.08, 0.3, 0.02]);
-    const all = new Set([...Object.keys(t6), ...Object.keys(t7), ...Object.keys(t8)]);
-    const tmp = {};
-    all.forEach(k => {
-      const s = (t6[k] || 0) + (t7[k] || 0) + (t8[k] || 0);
-      tmp[k] = s > threshold5 ? 100 : parseFloat(s.toFixed(2));
-    });
-    setSubs(tmp);
-    console.log("Subs calculated:", tmp);
-  }, [f6, f7, f8, threshold5]);
-
-  // ============= Fetching form4 => ServFulOk row =============
-  useEffect(()=>{
-    (async()=>{
-      try{
-        const { data } = await axios.get("/form4");
-        const totals = {};
-        [
-          "CENHKMD","CENHKMD1","GQKINTB","NDRM","AWHO","KONKX","NGWT","KGKLY","CWPX","DBKYMT",
-          "GPHTNW","ADPR","BDBWMRG","KERN","EBMHMBH","AGGL","HRKTPH","BCAPKLTC","JA","KOMLTMBVA"
-        ].forEach((key, i) => {
-          totals[key] = data.slice(0,8).reduce((sum, row, idx) => {
-            const val = parseFloat(row[key]) || 0;
-            return sum + (val * servFulOkRowMultipliers[idx]);
-          }, 0);
+        const byRegion = new Map();
+        items.forEach(({ region, networkEngineer }) => {
+          const code = normalizeEngineer(networkEngineer);
+          if (!byRegion.has(region)) byRegion.set(region, new Set());
+          byRegion.get(region).add(code);
         });
 
-        // **Map the keys to lowercase using servFulOkMap**
-        const adjustedMapped = {};
-        Object.keys(totals).forEach(k => {
-          const mappedKey = servFulOkMap[k] || k.toLowerCase();
-          const v = totals[k];
-          adjustedMapped[mappedKey] = v > threshold90 ? "100%" : `${v.toFixed(2)}%`;
-        });
+        const payload = Array.from(byRegion.entries())
+          .sort(([a], [b]) => sortRegionNames(a, b))
+          .map(([title, set]) => ({ title, meters: Array.from(set) }));
 
-        setServFulOkRow(adjustedMapped);
-
-        console.log("Adjusted ServFulOkRow:", adjustedMapped);
-      } catch(err){ 
-        console.error("Error fetching form4:", err); 
+        setRegions(payload);
+      } catch (e) {
+        console.error("Failed to load region table", e);
+        setRegions([]);
       }
     })();
   }, [threshold90]);
@@ -280,86 +144,20 @@ export default function FinalTables(){
     })();
   }, []);
 
-  // Once kpiData is in => parse row#1,2,5,6,7,10 weightages and calculate totalWeight
-  useEffect(()=>{
-    if(!kpiData.length) return;
-    // Define which rows to sum (only rows #1,2,5,6,7,10)
-    const rowsToSum = [1, 2, 5, 6, 7, 10];
-    const totalWeightCalc = kpiData
-      .filter(item => rowsToSum.includes(item.rowNumber) || rowsToSum.includes(item.no))
-      .reduce((acc, item) => {
-        const rawStr = item.weightage || '0';
-        const numeric = parseFloat(String(rawStr).replace('%','')) || 0;
-        return acc + numeric;
-      }, 0);
-    setTotalWeight(totalWeightCalc);
-    console.log("Total Weightage:", totalWeightCalc);
-
-    // Extract individual row weightages
-    const row10 = kpiData.find(o => o.rowNumber === 10 || o.no === 10);
-    if(row10){
-      const w10 = parseFloat(row10.weightage || '0') / 100;
-      setSumRowWeightage(w10);
-    }
-    const row6 = kpiData.find(o => o.rowNumber === 6 || o.no === 6);
-    if(row6){
-      const w6 = parseFloat(row6.weightage || '0') / 100;
-      setCurrentMonthWeightage(w6);
-    }
-    const row7 = kpiData.find(o => o.rowNumber === 7 || o.no === 7);
-    if(row7){
-      const w7 = parseFloat(row7.weightage || '0') / 100;
-      setServFulOkWeightage(w7);
-
-      // **Extract threshold90 from row #7's descriptionOfKPI**
-      if(row7.descriptionOfKPI){
-        const match90 = row7.descriptionOfKPI.match(/Above\s+(\d+(\.\d+)?)%/i);
-        if(match90 && match90[1] && !isNaN(match90[1])){
-          const extractedThreshold90 = parseFloat(match90[1]);
-          setThreshold90(extractedThreshold90);
-          console.log("Extracted threshold90:", extractedThreshold90);
-        } else {
-          console.warn("Failed to extract threshold90 from Row #7's descriptionOfKPI");
-        }
-      }
-    }
-    const row5 = kpiData.find(o => o.rowNumber === 5 || o.no === 5);
-    if(row5){
-      const w5 = parseFloat(row5.weightage || '0') / 100;
-      setFinalDataRowWeightage(w5);
-
-      // **Extract threshold5 from Row #5's descriptionOfKPI**
-      const match5 = row5.descriptionOfKPI.match(/Above\s+(\d+(\.\d+)?)%/i);
-      if(match5 && match5[1] && !isNaN(match5[1])){
-        const extractedThreshold5 = parseFloat(match5[1]);
-        setThreshold5(extractedThreshold5);
-        console.log("Extracted threshold5:", extractedThreshold5);
-      } else {
-        console.warn("Failed to extract threshold5 from Row #5's descriptionOfKPI");
-      }
-    }
-
-    // **Extract threshold1 from Row #1's descriptionOfKPI**
-    const row1 = kpiData.find(o => o.rowNumber === 1 || o.no === 1);
-    if(row1 && row1.descriptionOfKPI){
-      const match1 = row1.descriptionOfKPI.match(/Above\s+(\d+(\.\d+)?)%/i);
-      if(match1 && match1[1] && !isNaN(match1[1])){
-        const extractedThreshold1 = parseFloat(match1[1]);
-        setThreshold1(extractedThreshold1);
-        console.log("Extracted threshold1:", extractedThreshold1);
-      } else {
-        console.warn("Failed to extract threshold1 from Row #1's descriptionOfKPI");
-      }
-    }
-
-    // **Extract threshold2 from Row #2's descriptionOfKPI**
-    const row2 = kpiData.find(o => o.rowNumber === 2 || o.no === 2);
-    if(row2 && row2.descriptionOfKPI){
-      const match2 = row2.descriptionOfKPI.match(/Above\s+(\d+(\.\d+)?)%/i);
-      if(match2 && match2[1] && !isNaN(match2[1])){
-        const extractedThreshold2 = parseFloat(match2[1]);
-        setThreshold2(extractedThreshold2);
-        console.log("Extracted threshold2:", extractedThreshold2);
+  // Load Row-12 totals from localStorage only, retrying for a short time while FinalTables computes.
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 20; // up to ~20 seconds
+    const tryLoad = () => {
+      if (cancelled) return;
+      const ls = readRow12FromLocalStorage();
+      if (ls && Object.keys(ls).length) {
+        setTotals(ls);
+        setLoading(false);
+      } else if (attempts < maxAttempts) {
+        attempts += 1;
+        setTimeout(tryLoad, 1000);
       } else {
         console.warn("Failed to extract threshold2 from Row #2's descriptionOfKPI");
       }
